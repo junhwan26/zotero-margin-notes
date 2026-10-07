@@ -7,15 +7,13 @@
   const STYLE = `
     .mn-layer { position:fixed; inset:0; z-index:5; pointer-events:none;
       overflow:hidden; font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      color:#353329; --mn-bg:#fffdf3; --mn-border:#dedbd0; --mn-muted:#777265; }
+      color:#25272b; --mn-bg:#fff; --mn-border:#cbd0d6; --mn-muted:#5f6368; }
     .mn-layer [hidden] { display:none!important; }
-    .mn-layer[data-theme="dark"] { color:#eeeadd; --mn-bg:#302f2a;
-      --mn-border:#59564b; --mn-muted:#bbb6a5; }
     .mn-lines { position:absolute; inset:0; width:100%; height:100%; overflow:hidden; }
     .mn-card { position:absolute; box-sizing:border-box; pointer-events:auto;
       background:var(--mn-bg); border:1px solid var(--mn-border);
       border-left:3px solid var(--mn-color,#e4bd5a); border-radius:3px 9px 9px 3px;
-      box-shadow:0 2px 7px #0000000d; padding:0; overflow:hidden; }
+      box-shadow:0 3px 10px #00000024; padding:0; overflow:hidden; }
     .mn-card.mn-selected { outline:2px solid var(--mn-color,#b58d34); outline-offset:2px; }
     .mn-card button, .mn-overflow, .mn-tray button, .mn-editor textarea {
       font:inherit; color:inherit; }
@@ -25,9 +23,8 @@
     .mn-open:hover { background:#88888812; }
     .mn-editor { padding:0 8px 8px; display:flex; flex-direction:column; gap:6px; }
     .mn-editor textarea { width:100%; min-height:72px; max-height:140px; resize:none;
-      box-sizing:border-box; background:#ffffff99; border:1px solid var(--mn-border);
-      border-radius:4px; padding:6px; color:#24231f; }
-    .mn-layer[data-theme="dark"] .mn-editor textarea { background:#1e1e1bcc; color:#eeeadd; }
+      box-sizing:border-box; background:var(--mn-bg); border:1px solid var(--mn-border);
+      border-radius:4px; padding:6px; color:inherit; }
     /* Zotero's PDF viewer makes selection backgrounds transparent globally.
        Notes contain real text, so restore readable selection colors here. */
     .mn-layer textarea::selection, .mn-layer .mn-comment::selection,
@@ -42,7 +39,6 @@
     .mn-editor-actions button { border:1px solid var(--mn-border); border-radius:4px;
       background:#8888880d; padding:2px 7px; cursor:pointer; font-size:11px!important; }
     .mn-error { color:#a44435; font-size:11px; line-height:1.35; padding:0 10px 8px; }
-    .mn-layer[data-theme="dark"] .mn-error { color:#ffb4a8; }
     .mn-open:focus-visible, .mn-overflow:focus-visible, .mn-tray button:focus-visible,
     .mn-editor button:focus-visible,
     .mn-editor textarea:focus-visible, .mn-comment:focus-visible { outline:2px solid #538bd5; outline-offset:-2px; }

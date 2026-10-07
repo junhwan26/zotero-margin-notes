@@ -6,7 +6,7 @@ Margin Notes for Zotero shows PDF highlight and underline comments as note cards
 
 ## Features
 
-- Shows commented highlights and underlines as margin cards outside the PDF page.
+- Shows commented highlights and underlines as white note cards outside the PDF page, with dark text in both PDF themes.
 - Places cards on the best left or right margin using annotation coordinates, margin width, distance, and collision cost.
 - Double-click a margin note or overflow comment to edit plain text, with explicit Save and Cancel controls.
 - Opens rich-text comments in Zotero's native editor so formatting is not flattened.
@@ -16,7 +16,7 @@ Margin Notes for Zotero shows PDF highlight and underline comments as note cards
 
 ## Install
 
-1. Download `zotero-margin-notes-0.2.2.xpi` from the [latest GitHub release](https://github.com/junhwan26/zotero-margin-notes/releases/latest).
+1. Download `zotero-margin-notes-0.2.3.xpi` from the [latest GitHub release](https://github.com/junhwan26/zotero-margin-notes/releases/latest).
 2. In Zotero, open **Tools -> Plugins**.
 3. Choose the gear menu, then **Install Plugin From File...**.
 4. Select the XPI and open a PDF.

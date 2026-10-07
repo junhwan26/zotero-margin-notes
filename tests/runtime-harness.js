@@ -240,6 +240,19 @@ async function runSmoke(timers) {
       }
       overlay.layer.dataset.theme = original;
     };
+    const checkWhiteNoteSurface = (label, element) => {
+      const original = overlay.layer.dataset.theme;
+      for (const theme of ['light', 'dark']) {
+        overlay.layer.dataset.theme = theme;
+        const style = pdfWindow.getComputedStyle(element);
+        const fg = parseColor(style.color);
+        const bg = parseColor(style.backgroundColor);
+        check(label + ' ' + theme + ' surface stays opaque white and readable',
+          bg.a >= 0.99 && bg.r >= 250 && bg.g >= 250 && bg.b >= 250 && contrast(fg, bg) >= 4.5,
+          { color: fg.raw, backgroundColor: bg.raw, contrast: contrast(fg, bg) });
+      }
+      overlay.layer.dataset.theme = original;
+    };
     const selectedDraft = editor => editor.selectionEnd > editor.selectionStart;
     const selectionRange = editor => ({
       start: editor.selectionStart,
@@ -247,6 +260,7 @@ async function runSmoke(timers) {
       text: editor.value.slice(editor.selectionStart, editor.selectionEnd),
     });
     check('margin notes expose no Edit buttons', !overlay.layer.querySelector('.mn-edit'));
+    checkWhiteNoteSurface('margin note card', card(right.key));
     checkSelectionPalette('card comment', card(right.key).querySelector('.mn-comment'));
     await native.clickElement(card(right.key).querySelector('.mn-comment'));
     await settle();
@@ -275,6 +289,7 @@ async function runSmoke(timers) {
       pdfWindow.document.activeElement?.isSameNode(firstEditor) && selectedDraft(firstEditor));
     check('double-clicking a margin comment focuses and selects the textarea draft',
       pdfWindow.document.activeElement?.isSameNode(firstEditor) && selectedDraft(firstEditor));
+    checkWhiteNoteSurface('margin note textarea', firstEditor);
     checkSelectionPalette('card textarea', firstEditor);
     const fullDraftSelection = selectionRange(firstEditor);
     overlay.schedule();
@@ -465,6 +480,7 @@ async function runSmoke(timers) {
     check('overflow tray exposes a separate Open header and editable comment body',
       !!overflowItem && !!overflowRow.querySelector('.mn-open-tray') && !!overflowRow.querySelector('.mn-comment') &&
       !overflowRow.querySelector('.mn-edit'));
+    checkWhiteNoteSurface('overflow tray', overflowRow.closest('.mn-tray'));
     checkSelectionPalette('overflow comment', overflowRow.querySelector('.mn-comment'));
     await native.doubleClick(overflowRow.querySelector('.mn-open-tray'));
     await settle();

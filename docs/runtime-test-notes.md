@@ -48,6 +48,8 @@ Before mounting the DMG, CI verifies this SHA-256, computed from that official D
 
 ## Verified coverage
 
+Release candidate `0.2.3` passed **218/218** isolated Zotero 9.0.6 runtime checks and **23/23** Node tests on macOS on 2026-10-07. Syntax checks and the reproducible XPI build also passed. Six additional native checks verify opaque white card, overflow tray, and editor surfaces with readable text in both PDF themes.
+
 Release candidate `0.2.2` passed **212/212** isolated Zotero 9.0.6 runtime checks and **23/23** Node tests on macOS on 2026-10-07. Syntax checks and the reproducible XPI build also passed. The new checks cover double-click editing in margin cards and overflow entries, Enter/F2 access, native header navigation, word selection inside an active editor, draft/selection preservation during rerender, and readable selection colors in both themes.
 
 Release candidate `0.2.1` passed **196/196** isolated Zotero 9.0.6 runtime checks and **23/23** Node tests on macOS on 2026-10-07. Syntax checks and the reproducible XPI build also passed. The runtime run verified restoration of the exact native focus guard, then repeated trusted PDF selection after plugin shutdown and reopened the PDF to verify persisted comments.

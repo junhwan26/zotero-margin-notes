@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.3 - 2026-10-07
+
+- Give margin notes, overflow lists, and editors an opaque white background in both PDF themes.
+- Use dark text, a clearer border, and a stronger card shadow so notes stand out while selected text stays readable.
+
 ## 0.2.2 - 2026-10-07
 
 - Replace Edit buttons with double-click editing in margin notes and the overflow list. Enter and F2 also start editing when the comment is focused.

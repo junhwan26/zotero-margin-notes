@@ -6,7 +6,7 @@ Zotero 여백 노트는 PDF 하이라이트와 밑줄 코멘트를 논문 바깥
 
 ## 기능
 
-- 코멘트가 있는 하이라이트와 밑줄을 PDF 바깥 여백에 표시합니다.
+- 코멘트가 있는 하이라이트와 밑줄을 PDF 바깥 여백에 흰색 노트로 표시합니다. 밝은 테마와 어두운 테마 모두 진한 글자를 사용합니다.
 - 왼쪽/오른쪽 배치를 하이라이트 좌표, 여백 너비, 기존 카드와의 충돌 가능성으로 계산합니다.
 - 여백 카드와 추가 코멘트 목록의 본문을 더블클릭하여 수정하고 저장/취소할 수 있습니다.
 - 서식 있는 코멘트는 서식 손실을 막기 위해 Zotero의 원래 편집기로 엽니다.
@@ -16,7 +16,7 @@ Zotero 여백 노트는 PDF 하이라이트와 밑줄 코멘트를 논문 바깥
 
 ## 설치
 
-1. [최신 GitHub 릴리스](https://github.com/junhwan26/zotero-margin-notes/releases/latest)에서 `zotero-margin-notes-0.2.2.xpi`를 내려받습니다.
+1. [최신 GitHub 릴리스](https://github.com/junhwan26/zotero-margin-notes/releases/latest)에서 `zotero-margin-notes-0.2.3.xpi`를 내려받습니다.
 2. Zotero에서 **Tools -> Plugins**를 엽니다.
 3. 톱니바퀴 메뉴에서 **Install Plugin From File...**을 선택하고 XPI를 고릅니다.
 4. PDF를 열고 상단 도구막대의 **Margin Notes** 또는 **여백 노트** 버튼으로 켜고 끕니다.
