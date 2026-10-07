@@ -35,8 +35,10 @@
     const click = async element => {
       if (!element) throw new Error('Missing native control');
       const target = element.ownerDocument.defaultView;
-      const r = element.getBoundingClientRect();
-      if (!r.width || !r.height || element.disabled) throw new Error('Native control is hidden or disabled: ' + element.className);
+      const r = await waitFor('visible enabled native control: ' + element.className, () => {
+        const rect = element.getBoundingClientRect();
+        return element.isConnected && rect.width > 0 && rect.height > 0 && !element.disabled && rect;
+      });
       const x = r.left + r.width / 2, y = r.top + r.height / 2;
       mouse(target, 'mousemove', x, y);
       mouse(target, 'mousedown', x, y, 1);
