@@ -21,7 +21,8 @@ async function runSmoke(timers) {
   const sleep = ms => new Promise(resolve => timers.setTimeout(resolve, ms));
   const write = () => IOUtils.writeJSON(output, report, { tmpPath: output + '.tmp' });
   const check = (name, condition, details) => {
-    report.checks.push({ name, passed: !!condition, ...(details === undefined ? {} : { details }) });
+    // Keep evidence in this scope; reader-owned objects die when the PDF closes.
+    report.checks.push({ name, passed: !!condition, ...(details === undefined ? {} : { details: JSON.parse(JSON.stringify(details)) }) });
     if (!condition) throw new Error(name + (details ? ': ' + JSON.stringify(details) : ''));
   };
   const waitFor = async (name, predicate, timeout = 15000) => {
@@ -79,6 +80,9 @@ async function runSmoke(timers) {
     const korean = localized('ko-KR');
     check('English is the default language and fallback', english.t('toggle') === 'Margin Notes' && localized('fr-FR').t('save') === 'Save');
     check('Korean localization includes editing controls', korean.t('toggle') === '여백 노트' && korean.t('save') === '저장' && korean.t('cancel') === '취소');
+    // Open the fixture with no plugin hooks or overlay so the same trusted UI
+    // operations establish native behavior before the plugin touches this reader.
+    plugin.stop();
     const attachment = await Zotero.Attachments.importFromFile({ file: PathUtils.join(directory, 'two-column.pdf'), libraryID: Zotero.Libraries.userLibraryID });
     const createAnnotation = async (comment, x, y, pageIndex = 0) => {
       const item = new Zotero.Item('annotation');
@@ -113,6 +117,12 @@ async function runSmoke(timers) {
     internal.toggleSidebar(false);
     const pdf = pdfWindow.PDFViewerApplication.pdfViewer;
     pdf.currentScaleValue = '0.85';
+    const nativeScope = { Components };
+    Services.scriptloader.loadSubScript(smokeRoot + 'native-regression.js', nativeScope);
+    const native = nativeScope.NativeRegression.create({ reader, pdfWindow, check, waitFor, sleep, mark, Zotero });
+    await native.runCore('native baseline without plugin');
+    const originalTextFocusedGuard = view._textAnnotationFocused;
+    plugin.start();
     const controller = await waitFor('plugin reader controller', () => plugin.controllers.get(reader));
     const overlay = await waitFor('primary overlay frame', () => controller.frames.get(view));
     const doc = pdfWindow.document;
@@ -156,28 +166,17 @@ async function runSmoke(timers) {
       await sleep(visualHold * 1000);
     }
 
+    await native.runCore('native with margin notes enabled');
+    await native.runFocusTransitions({ card, id: left.key, toggle: reader._iframeWindow.document.querySelector('.mn-toggle') });
+    reader._iframeWindow.document.querySelector('.mn-fit').click();
+    await waitFor('margin cards after native regression checks', () => card(left.key) && card(right.key));
+
     await mark('editing a persisted annotation comment');
     left.annotationComment = 'EDITED: updated in the Zotero database.';
     await left.saveTx();
     await waitFor('edited comment propagation', () => card(left.key)?.textContent.includes('EDITED:'));
     check('persisted comment edits update the card', true);
     await snapshot('edited comment', true);
-    await mark('guarding annotation keyboard shortcuts');
-    internal._updateState({ selectedAnnotationIDs: [left.key] });
-    await settle();
-    const beforeKeyboard = JSON.stringify(internal._state.annotations.map(a => ({ id: a.id, comment: a.comment, position: a.position })));
-    const commentElement = card(left.key).querySelector('.mn-comment');
-    commentElement.focus();
-    check('margin comment receives keyboard focus', doc.activeElement === commentElement);
-    const textFocusedGuard = view._textAnnotationFocused;
-    for (const options of [{ key: 'Delete', code: 'Delete' }, { key: 'Backspace', code: 'Backspace' }, { key: 'ArrowRight', code: 'ArrowRight', shiftKey: true }, { key: 'z', code: 'KeyZ', metaKey: true }]) {
-      commentElement.dispatchEvent(new pdfWindow.KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...options }));
-      commentElement.dispatchEvent(new pdfWindow.KeyboardEvent('keyup', { bubbles: true, cancelable: true, ...options }));
-    }
-    await settle();
-    check('margin keyboard shortcuts preserve annotations', beforeKeyboard === JSON.stringify(internal._state.annotations.map(a => ({ id: a.id, comment: a.comment, position: a.position }))));
-    commentElement.blur();
-
     await mark('editing from the margin card');
     const readerWindow = reader._iframeWindow.wrappedJSObject || reader._iframeWindow;
     const readerDoc = readerWindow.document;
@@ -208,15 +207,7 @@ async function runSmoke(timers) {
     });
     const fieldsBeforeSave = preservedFields(currentAnnotation(left.key));
     await beginEdit(left.key);
-    const editor = typeDraft(left.key, savedComment);
-    editor.focus();
-    const beforeDraftKeyboard = JSON.stringify(internal._state.annotations);
-    for (const options of [{ key: 'Delete', code: 'Delete' }, { key: 'Backspace', code: 'Backspace' }, { key: 'ArrowRight', code: 'ArrowRight', shiftKey: true }, { key: 'z', code: 'KeyZ', metaKey: true }]) {
-      editor.dispatchEvent(new pdfWindow.KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...options }));
-      editor.dispatchEvent(new pdfWindow.KeyboardEvent('keyup', { bubbles: true, cancelable: true, ...options }));
-    }
-    await settle();
-    check('textarea keyboard shortcuts preserve original annotations', beforeDraftKeyboard === JSON.stringify(internal._state.annotations));
+    typeDraft(left.key, savedComment).focus();
     await reader.navigate({ pageIndex: 1 });
     await settle();
     await reader.navigate({ pageIndex: 0 });
@@ -420,7 +411,8 @@ async function runSmoke(timers) {
     check('shutdown removes card overlays', !doc.querySelector('.mn-layer'));
     check('shutdown removes reader toolbar', !reader._iframeWindow.document.querySelector('.mn-toolbar'));
     check('shutdown clears reader controllers', plugin.controllers.size === 0);
-    check('shutdown restores keyboard guard', view._textAnnotationFocused !== textFocusedGuard);
+    check('shutdown restores the exact native keyboard guard', view._textAnnotationFocused === originalTextFocusedGuard);
+    await native.runSelection('native text selection after plugin shutdown', 25);
     await mark('reopening the PDF to verify persisted edits');
     reader.close();
     await waitFor('original reader closed', () => !Zotero.Reader._readers.includes(reader));

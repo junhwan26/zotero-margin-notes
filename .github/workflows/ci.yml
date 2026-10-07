@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
 
 permissions:
   contents: read
@@ -21,3 +22,35 @@ jobs:
       - run: npm run build
       - name: Verify committed update metadata
         run: git diff --exit-code -- updates.json
+
+  zotero-runtime-smoke:
+    runs-on: macos-15
+    needs: check
+    env:
+      ZOTERO_DMG_URL: https://download.zotero.org/client/release/9.0.6/Zotero-9.0.6.dmg
+      ZOTERO_DMG_SHA256: 7a9edba6b4a611f4f800ff3f159e67a62b403ceedd56bfdafc063f23e51c8db7
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Download Zotero 9.0.6 for macOS
+        run: |
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/Zotero-9.0.6.dmg" "$ZOTERO_DMG_URL"
+          echo "$ZOTERO_DMG_SHA256  $RUNNER_TEMP/Zotero-9.0.6.dmg" | shasum -a 256 --check
+      - name: Install isolated Zotero app
+        run: |
+          MOUNT_DIR="$RUNNER_TEMP/zotero-dmg"
+          mkdir -p "$MOUNT_DIR"
+          hdiutil attach "$RUNNER_TEMP/Zotero-9.0.6.dmg" -mountpoint "$MOUNT_DIR" -nobrowse -readonly
+          cp -R "$MOUNT_DIR/Zotero.app" "$RUNNER_TEMP/Zotero.app"
+          hdiutil detach "$MOUNT_DIR"
+      - name: Run native Zotero runtime smoke test
+        run: npm run test:native -- --app "$RUNNER_TEMP/Zotero.app/Contents/MacOS/zotero"
+      - name: Upload runtime smoke report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: runtime-smoke-report
+          path: dist/runtime-smoke-report.json
+          if-no-files-found: error

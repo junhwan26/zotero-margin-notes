@@ -131,12 +131,17 @@
       const originalFocusGuard = view._textAnnotationFocused;
       if (typeof originalFocusGuard === 'function') {
         const layer = this.layer;
-        const focusGuard = function (...args) {
-          return layer.contains(layer.ownerDocument.activeElement) || originalFocusGuard.apply(this, args);
+        const focusGuard = function () {
+          return layer.contains(layer.ownerDocument.activeElement) || originalFocusGuard.call(view);
         };
-        view._textAnnotationFocused = focusGuard;
+        // PDFView runs in the reader's content compartment. Export the hook and
+        // call the original without a privileged argument array: Function.apply
+        // in content cannot read that array's length, breaking native drag/keys.
+        view._textAnnotationFocused = root.Cu.exportFunction(focusGuard, view);
+        // Read back through the same wrapper used by cleanup for identity checks.
+        const installedGuard = view._textAnnotationFocused;
         this.cleanups.push(() => {
-          if (view._textAnnotationFocused === focusGuard) view._textAnnotationFocused = originalFocusGuard;
+          if (view._textAnnotationFocused === installedGuard) view._textAnnotationFocused = originalFocusGuard;
         });
       }
       const schedule = () => this.schedule();

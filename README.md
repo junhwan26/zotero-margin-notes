@@ -10,17 +10,18 @@ Margin Notes for Zotero shows PDF highlight and underline comments as note cards
 - Places cards on the best left or right margin using annotation coordinates, margin width, distance, and collision cost.
 - Lets you edit plain-text comments directly from the margin card with explicit Save and Cancel controls.
 - Opens rich-text comments in Zotero's native editor so formatting is not flattened.
+- Preserves native PDF interactions, including text-selection popups, native annotation tools, keyboard selection, search, zoom, navigation, undo/redo, and annotation deletion.
 - Uses English by default and switches to Korean automatically for Korean Zotero locales.
 - Stores comments in Zotero annotations. It does not send data to an external service.
 
 ## Install
 
-1. Download `zotero-margin-notes-0.2.0.xpi` from the [latest GitHub release](https://github.com/junhwan26/zotero-margin-notes/releases/latest).
+1. Download `zotero-margin-notes-0.2.1.xpi` from the [latest GitHub release](https://github.com/junhwan26/zotero-margin-notes/releases/latest).
 2. In Zotero, open **Tools -> Plugins**.
 3. Choose the gear menu, then **Install Plugin From File...**.
 4. Select the XPI and open a PDF.
 
-The old `v0.1.0` build used a placeholder update URL, so upgrading to `v0.2.0` requires one manual install. Future versions can use the GitHub-backed `updates.json` endpoint.
+The old `v0.1.0` build used a placeholder update URL, so upgrading to `v0.2.0` or later requires one manual install. Future versions can use the GitHub-backed `updates.json` endpoint.
 
 ## Use
 
@@ -49,8 +50,10 @@ npm run build
 
 The build script creates a reproducible XPI under `dist/` and regenerates `updates.json` with the matching SHA-256 hash.
 
-The optional Zotero smoke test uses a temporary profile and a synthetic PDF:
+The Zotero runtime smoke test uses a temporary profile, a synthetic PDF, and an installed Zotero 9.0.6 app:
 
 ```sh
-python3 scripts/runtime-smoke.py
+python3 scripts/runtime-smoke.py --timeout 300
 ```
+
+Continuous integration also runs this native smoke test on a macOS runner after downloading Zotero 9.0.6 from the official Zotero release host and verifying the DMG SHA-256 before launch.

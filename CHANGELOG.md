@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 - 2026-10-07
+
+- Fix a Zotero 9 native reader regression where the privileged focus guard wrapped native handlers with `original.apply(this, args)` and passed a privileged rest-args array into the PDF content window. Content code could not read that array's `length`, so native `dragstart` and keyboard handlers threw `Permission denied`.
+- Use Zotero's function export bridge and avoid passing the privileged args array across the boundary, so text-selection popups, native annotation tools, keyboard selection, search, zoom/navigation, deletion, undo/redo, and copy conversion handling keep working.
+- Add native runtime CI on macOS with the official Zotero 9.0.6 app, an isolated profile, and `scripts/runtime-smoke.py --timeout 300`.
+
 ## 0.2.0 - 2026-10-07
 
 - Add direct editing for plain-text highlight comments from margin note cards.

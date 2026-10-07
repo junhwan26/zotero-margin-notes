@@ -1,12 +1,13 @@
 {
   "name": "zotero-margin-notes",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "license": "MIT",
   "repository": "github:junhwan26/zotero-margin-notes",
   "scripts": {
     "test": "node --test tests/*.test.cjs",
-    "check": "node --check bootstrap.js && node --check src/i18n.js && node --check src/layout.js && node --check src/overlay.js",
+    "test:native": "python3 scripts/runtime-smoke.py --timeout 300",
+    "check": "node --check bootstrap.js && node --check src/i18n.js && node --check src/layout.js && node --check src/overlay.js && node --check tests/runtime-harness.js && node --check tests/native-regression.js",
     "build": "python3 scripts/build.py"
   }
 }

@@ -55,7 +55,7 @@ def main():
     args = parser.parse_args()
     if not Path(args.app).is_file():
         parser.error(f'Zotero executable not found: {args.app}')
-    for name in ('bootstrap.js', 'src/i18n.js', 'src/layout.js', 'src/overlay.js', 'tests/runtime-harness.js'):
+    for name in ('bootstrap.js', 'src/i18n.js', 'src/layout.js', 'src/overlay.js', 'tests/runtime-harness.js', 'tests/native-regression.js'):
         if not (ROOT / name).is_file():
             parser.error(f'Required build input is missing: {name}')
     temp = Path(tempfile.mkdtemp(prefix='zotero-margin-smoke-'))
@@ -98,6 +98,7 @@ def main():
     with zipfile.ZipFile(addon, 'w', zipfile.ZIP_DEFLATED) as archive:
         archive.writestr('manifest.json', json.dumps(manifest))
         archive.write(ROOT / 'tests/runtime-harness.js', 'bootstrap.js')
+        archive.write(ROOT / 'tests/native-regression.js', 'native-regression.js')
         archive.write(ROOT / 'bootstrap.js', 'production/bootstrap.js')
         archive.write(ROOT / 'src/i18n.js', 'production/src/i18n.js')
         archive.write(ROOT / 'src/layout.js', 'production/src/layout.js')
