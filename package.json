@@ -1,0 +1,12 @@
+{
+  "name": "zotero-margin-notes",
+  "version": "0.2.0",
+  "private": true,
+  "license": "MIT",
+  "repository": "github:junhwan26/zotero-margin-notes",
+  "scripts": {
+    "test": "node --test tests/*.test.cjs",
+    "check": "node --check bootstrap.js && node --check src/i18n.js && node --check src/layout.js && node --check src/overlay.js",
+    "build": "python3 scripts/build.py"
+  }
+}

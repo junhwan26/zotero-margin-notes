@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, for example v0.2.0
+        required: true
+        default: v0.2.0
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: npm test
+      - run: npm run check
+      - run: npm run build
+      - run: git diff --exit-code -- updates.json
+      - name: Check release tag matches manifest
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          VERSION="$(node -p "require('./manifest.json').version")"
+          test "$TAG" = "v$VERSION"
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          VERSION="${TAG#v}"
+          gh release create "$TAG" "dist/zotero-margin-notes-$VERSION.xpi" \
+            --title "Margin Notes for Zotero $TAG" \
+            --target "${{ github.sha }}" \
+            --notes-file CHANGELOG.md

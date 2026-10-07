@@ -1,0 +1,8 @@
+dist/
+.omx/
+docs/installed-zotero*.png
+docs/preview.html
+*.log
+.DS_Store
+__pycache__/
+*.pyc
