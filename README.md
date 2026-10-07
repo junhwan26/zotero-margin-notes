@@ -1,48 +1,86 @@
-# Margin Notes for Zotero
+<h1 align="center">Margin Notes for Zotero</h1>
 
-[Korean README](README.ko.md)
+<p align="center">Read and edit PDF highlight comments in the left or right outer margin, chosen automatically for two-column papers.</p>
 
-Margin Notes for Zotero shows PDF highlight and underline comments as note cards in the outer margins of the paper. It is built for Zotero 9.0.x and chooses the left or right margin from the annotation position, available space, and nearby note congestion, so two-column papers stay readable.
+<p align="center">
+  <a href="https://github.com/junhwan26/zotero-margin-notes/actions/workflows/ci.yml"><img alt="Check" src="https://github.com/junhwan26/zotero-margin-notes/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/junhwan26/zotero-margin-notes/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/junhwan26/zotero-margin-notes?label=release"></a>
+  <img alt="Zotero 9.0.x" src="https://img.shields.io/badge/Zotero-9.0.x-CC2936">
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+</p>
 
-## Features
+<p align="center">
+  <a href="README.md">English</a> ·
+  <a href="README.ko.md">한국어</a> ·
+  <a href="https://github.com/junhwan26/zotero-margin-notes/releases/latest">Download</a> ·
+  <a href="#quick-start">Quick Start</a> ·
+  <a href="#compatibility">Compatibility</a>
+</p>
 
-- Shows commented highlights and underlines as white note cards outside the PDF page, with dark text in both PDF themes.
-- Places cards on the best left or right margin using annotation coordinates, margin width, distance, and collision cost.
-- Double-click a margin note or overflow comment to edit plain text, with explicit Save and Cancel controls.
-- Opens rich-text comments in Zotero's native editor so formatting is not flattened.
-- Preserves native PDF interactions, including text-selection popups, native annotation tools, keyboard selection, search, zoom, navigation, undo/redo, and annotation deletion.
-- Uses English by default and switches to Korean automatically for Korean Zotero locales.
-- Stores comments in Zotero annotations. It does not send data to an external service.
+![Conceptual illustration of Margin Notes placing white note cards beside a two-column PDF](docs/assets/overview.svg)
 
-## Install
+<p align="center"><sub>Conceptual illustration. The real UI appears inside Zotero's PDF reader and follows the current PDF viewport.</sub></p>
 
-1. Download `zotero-margin-notes-0.2.3.xpi` from the [latest GitHub release](https://github.com/junhwan26/zotero-margin-notes/releases/latest).
+## Why Use It
+
+| Feature | What it does |
+| --- | --- |
+| Margin note cards | Shows comments from highlighted or underlined PDF text as white cards outside the page. |
+| Two-column placement | Chooses the left or right outer margin from annotation coordinates, available room, and nearby card congestion. |
+| Edit comments | Double-click a plain-text note to edit it; rich-text comments open in Zotero's native editor so formatting is preserved. |
+| Zotero workflow preservation | Keeps text selection, selection popups, annotation tools, keyboard selection, search, zoom, page navigation, deletion, undo/redo, and sidebar edits working. |
+
+## Quick Start
+
+1. Download `zotero-margin-notes-0.2.3.xpi` from the [latest release](https://github.com/junhwan26/zotero-margin-notes/releases/latest).
 2. In Zotero, open **Tools -> Plugins**.
-3. Choose the gear menu, then **Install Plugin From File...**.
-4. Select the XPI and open a PDF.
+3. Open the gear menu, choose **Install Plugin From File...**, and select the XPI.
+4. Open a PDF, add a comment to a highlight or underline, then use **Margin Notes** in the reader toolbar.
 
-The old `v0.1.0` build used a placeholder update URL, so upgrading to `v0.2.0` or later requires one manual install. Future versions can use the GitHub-backed `updates.json` endpoint.
+<details>
+<summary>Upgrading from 0.1.0</summary>
 
-## Use
+The `0.1.0` build used a placeholder update URL. Install `0.2.0` or later manually once; after that, Zotero can use this repository's `updates.json` release metadata.
 
-Open a PDF and add a comment to a highlight or underline. The note appears in the left or right outer margin. Use the toolbar button **Margin Notes** to toggle the overlay, and **Fit Notes** to adjust PDF zoom when the window is too narrow.
+</details>
 
-Double-click the body of a note to edit a plain-text comment in place. You can also focus the comment with Tab and press **Enter** or **F2**. **Save** writes the change back to the Zotero annotation; **Cancel** keeps the existing comment. Saving an empty comment removes that card from the margin view because the plugin only displays annotations with comments.
+## Gestures
 
-Double-clicking a comment containing rich text opens the native Zotero annotation editor. This keeps formatting such as bold, italics, subscript, and superscript intact.
+| Action | Gesture |
+| --- | --- |
+| Toggle margin notes | Click **Margin Notes** in the Zotero PDF reader toolbar. |
+| Make room for notes | Click **Fit Notes** when the window is too narrow. |
+| Edit plain text | Double-click a margin note or overflow comment. |
+| Keyboard edit | Focus the comment with Tab, then press **Enter** or **F2**. |
+| Save or cancel | Use **Save** or **Cancel** in the inline editor. |
+| Open the source annotation | Click the page link in a note header. |
 
-Text selected while editing stays readable in both light and dark themes. The page header on each note opens the original annotation in Zotero; double-clicking inside an active editor retains normal word selection.
+Saving an empty comment removes that card from the margin view because the plugin displays annotations that contain comments. Double-clicking inside an active editor keeps normal word selection. Comments containing rich text delegate to Zotero's native editor instead of flattening formatting.
+
+White notes and editors remain readable in both PDF themes. Comments are saved in Zotero annotations. English is the default interface language; Korean Zotero locales select Korean automatically.
 
 ## Compatibility
 
-- Target: Zotero `9.0` through `9.0.*`.
-- Validated baseline: Zotero `9.0.6`.
-- Reader type: PDF only. EPUB and web snapshots are ignored.
-- Implementation note: this plugin uses Zotero's toolbar extension event plus internal PDF reader annotation and viewport APIs. Zotero changes to those internals may require an update.
+Margin Notes has no required third-party Zotero add-on and no npm runtime package dependency. It targets Zotero `9.0` through `9.0.*`, with Zotero `9.0.6` validated in native CI. The plugin is PDF-only; EPUB and web snapshots are ignored.
 
-## Development
+The `0.2.3` release passed [218 native Zotero runtime checks](https://github.com/junhwan26/zotero-margin-notes/actions/runs/37580613959) and 23 Node tests. The native run uses an isolated Zotero profile with the Margin Notes harness installed, so it verifies the covered Zotero reader and start/stop behaviors. Named third-party add-on workflows are outside that test suite. The lifecycle test also preserves a mocked toolbar listener belonging to another plugin.
 
-No runtime package dependencies are required. Use Node.js and Python 3:
+Observed on 2026-10-07 in the maintainer's Zotero profile: Better BibTeX `9.0.70`, Translate for Zotero `2.4.8`, Ethereal Style `6.0.86`, and Research Vault Bridge `0.2.0` were active together with Margin Notes `0.2.3`; ZotMoov `1.2.32` was installed but disabled. Full workflow testing with those named add-ons was not performed.
+
+Read the [compatibility notes](docs/compatibility.md) and [public 0.2.3 evidence](docs/evidence/compatibility-0.2.3.json) for the dependency audit, native check inventory, and observed add-on state.
+
+## Support
+
+Open a [GitHub issue](https://github.com/junhwan26/zotero-margin-notes/issues) with your Zotero version, plugin version, operating system, a small reproduction, and whether the problem still happens with only Margin Notes enabled. Reader internals can change between Zotero releases, so exact version details matter.
+
+## Acknowledgments
+
+The README structure was informed by public Zotero plugin documentation from [Zotero PDF Translate](https://github.com/windingwind/zotero-pdf-translate/blob/main/README.md), [Better Notes for Zotero](https://github.com/windingwind/zotero-better-notes/blob/master/README.md), [Zotero Style](https://github.com/MuiseDestiny/zotero-style/blob/master/README.md), and [Better BibTeX](https://github.com/retorquere/zotero-better-bibtex/blob/master/README.md). This is a documentation reference, not an endorsement or compatibility claim.
+
+<details>
+<summary>Development</summary>
+
+This repository has no npm runtime dependencies. Development uses Node.js for unit tests and syntax checks, and Python 3 for the reproducible XPI build.
 
 ```sh
 npm test
@@ -50,12 +88,6 @@ npm run check
 npm run build
 ```
 
-The build script creates a reproducible XPI under `dist/` and regenerates `updates.json` with the matching SHA-256 hash.
+The native Zotero smoke test uses a temporary profile, a synthetic PDF, and Zotero 9.0.6. CI downloads Zotero 9.0.6 from the official Zotero release host, verifies the DMG SHA-256, installs it into the runner's temporary directory, and uploads `dist/runtime-smoke-report.json`.
 
-The Zotero runtime smoke test uses a temporary profile, a synthetic PDF, and an installed Zotero 9.0.6 app:
-
-```sh
-python3 scripts/runtime-smoke.py --timeout 300
-```
-
-Continuous integration also runs this native smoke test on a macOS runner after downloading Zotero 9.0.6 from the official Zotero release host and verifying the DMG SHA-256 before launch.
+</details>

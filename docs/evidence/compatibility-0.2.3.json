@@ -1,0 +1,951 @@
+{
+  "checkedOn": "2026-10-07",
+  "releaseVersion": "0.2.3",
+  "zoteroVersion": "9.0.6",
+  "releaseCommit": "d181da0085397a7a3206a5bdea5511535ef1b857",
+  "xpiSha256": "c4a92ab3819025b1f2c7ae96acb332ab3820039dc061a6ac623db64b0776426c",
+  "runtimeDependencyAudit": {
+    "requiredThirdPartyAddOns": [],
+    "requiredRuntimePackages": [],
+    "basis": [
+      "manifest.json",
+      "package.json",
+      "bootstrap.js",
+      "scripts/build.py"
+    ]
+  },
+  "nativeRuntime": {
+    "complete": true,
+    "passed": true,
+    "checkCount": 218,
+    "environment": "macOS; temporary profile and synthetic PDF; only Margin Notes test harness installed",
+    "ciRun": "https://github.com/junhwan26/zotero-margin-notes/actions/runs/37580613959",
+    "checks": [
+      {
+        "name": "production bootstrap started",
+        "passed": true
+      },
+      {
+        "name": "English is the default language and fallback",
+        "passed": true
+      },
+      {
+        "name": "Korean localization includes editing controls",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin pointer: PDF text receives pointer input",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin pointer: selection used trusted pointer events",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin pointer: native text drag cancellation remains intact",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin pointer: selection popup is visible",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin: keyboard extends the PDF text selection",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin: popup color creates a native highlight",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin: clicking a highlight opens its native comment popup",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin: native popup comment editing works",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin: Delete removes the selected native highlight",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin: native Undo restores the highlight and comment",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin: native Redo repeats deletion",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin highlight tool: PDF text receives pointer input",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin highlight tool: selection used trusted pointer events",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin highlight tool: native text drag cancellation remains intact",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin: native highlight toolbar creates a highlight",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin underline tool: PDF text receives pointer input",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin underline tool: selection used trusted pointer events",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin underline tool: native text drag cancellation remains intact",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin: native underline tool creates an underline",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin: native Zoom In button changes PDF scale",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin: native page navigation works in both directions",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin: native search finds PDF text",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin copy selection: PDF text receives pointer input",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin copy selection: selection used trusted pointer events",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin copy selection: native text drag cancellation remains intact",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin copy selection: selection popup is visible",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin: native copy handler exports selected PDF text",
+        "passed": true
+      },
+      {
+        "name": "native baseline without plugin: native tests preserve pre-existing annotations",
+        "passed": true
+      },
+      {
+        "name": "before fit: cards avoid PDF pages",
+        "passed": true
+      },
+      {
+        "name": "before fit: cards avoid each other",
+        "passed": true
+      },
+      {
+        "name": "before fit: cards stay inside horizontal viewport",
+        "passed": true
+      },
+      {
+        "name": "two-column baseline: cards are visible",
+        "passed": true
+      },
+      {
+        "name": "two-column baseline: cards avoid PDF pages",
+        "passed": true
+      },
+      {
+        "name": "two-column baseline: cards avoid each other",
+        "passed": true
+      },
+      {
+        "name": "two-column baseline: cards stay inside horizontal viewport",
+        "passed": true
+      },
+      {
+        "name": "left-column comment uses left outer margin",
+        "passed": true
+      },
+      {
+        "name": "right-column comment uses right outer margin",
+        "passed": true
+      },
+      {
+        "name": "blank highlight comments are omitted",
+        "passed": true
+      },
+      {
+        "name": "all four first-page comments appear",
+        "passed": true
+      },
+      {
+        "name": "inactive margin editors are hidden by computed style",
+        "passed": true
+      },
+      {
+        "name": "toolbar is mounted",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled pointer: PDF text receives pointer input",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled pointer: selection used trusted pointer events",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled pointer: native text drag cancellation remains intact",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled pointer: selection popup is visible",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled: keyboard extends the PDF text selection",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled: popup color creates a native highlight",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled: clicking a highlight opens its native comment popup",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled: native popup comment editing works",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled: Delete removes the selected native highlight",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled: native Undo restores the highlight and comment",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled: native Redo repeats deletion",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled highlight tool: PDF text receives pointer input",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled highlight tool: selection used trusted pointer events",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled highlight tool: native text drag cancellation remains intact",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled: native highlight toolbar creates a highlight",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled underline tool: PDF text receives pointer input",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled underline tool: selection used trusted pointer events",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled underline tool: native text drag cancellation remains intact",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled: native underline tool creates an underline",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled: native Zoom In button changes PDF scale",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled: native page navigation works in both directions",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled: native search finds PDF text",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled copy selection: PDF text receives pointer input",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled copy selection: selection used trusted pointer events",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled copy selection: native text drag cancellation remains intact",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled copy selection: selection popup is visible",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled: native copy handler exports selected PDF text",
+        "passed": true
+      },
+      {
+        "name": "native with margin notes enabled: native tests preserve pre-existing annotations",
+        "passed": true
+      },
+      {
+        "name": "focused margin comment: control has focus before Delete",
+        "passed": true
+      },
+      {
+        "name": "focused margin comment: Delete reaches the focused control as trusted input",
+        "passed": true
+      },
+      {
+        "name": "focused margin comment: Delete preserves native annotations",
+        "passed": true
+      },
+      {
+        "name": "focused margin comment: control has focus before Backspace",
+        "passed": true
+      },
+      {
+        "name": "focused margin comment: Backspace reaches the focused control as trusted input",
+        "passed": true
+      },
+      {
+        "name": "focused margin comment: Backspace preserves native annotations",
+        "passed": true
+      },
+      {
+        "name": "focused margin comment: control has focus before ArrowRight",
+        "passed": true
+      },
+      {
+        "name": "focused margin comment: ArrowRight reaches the focused control as trusted input",
+        "passed": true
+      },
+      {
+        "name": "focused margin comment: ArrowRight preserves native annotations",
+        "passed": true
+      },
+      {
+        "name": "focused margin comment: control has focus before z",
+        "passed": true
+      },
+      {
+        "name": "focused margin comment: z reaches the focused control as trusted input",
+        "passed": true
+      },
+      {
+        "name": "focused margin comment: z preserves native annotations",
+        "passed": true
+      },
+      {
+        "name": "after margin comment focus: PDF text receives pointer input",
+        "passed": true
+      },
+      {
+        "name": "after margin comment focus: selection used trusted pointer events",
+        "passed": true
+      },
+      {
+        "name": "after margin comment focus: native text drag cancellation remains intact",
+        "passed": true
+      },
+      {
+        "name": "after margin comment focus: selection popup is visible",
+        "passed": true
+      },
+      {
+        "name": "focused margin textarea: control has focus before Delete",
+        "passed": true
+      },
+      {
+        "name": "focused margin textarea: Delete reaches the focused control as trusted input",
+        "passed": true
+      },
+      {
+        "name": "focused margin textarea: Delete preserves native annotations",
+        "passed": true
+      },
+      {
+        "name": "focused margin textarea: Delete edits only the unsaved draft",
+        "passed": true
+      },
+      {
+        "name": "focused margin textarea: control has focus before Backspace",
+        "passed": true
+      },
+      {
+        "name": "focused margin textarea: Backspace reaches the focused control as trusted input",
+        "passed": true
+      },
+      {
+        "name": "focused margin textarea: Backspace preserves native annotations",
+        "passed": true
+      },
+      {
+        "name": "focused margin textarea: Backspace edits only the unsaved draft",
+        "passed": true
+      },
+      {
+        "name": "focused margin textarea: control has focus before ArrowRight",
+        "passed": true
+      },
+      {
+        "name": "focused margin textarea: ArrowRight reaches the focused control as trusted input",
+        "passed": true
+      },
+      {
+        "name": "focused margin textarea: ArrowRight preserves native annotations",
+        "passed": true
+      },
+      {
+        "name": "focused margin textarea: Shift+Arrow selects draft text",
+        "passed": true
+      },
+      {
+        "name": "focused margin textarea: control has focus before z",
+        "passed": true
+      },
+      {
+        "name": "focused margin textarea: z reaches the focused control as trusted input",
+        "passed": true
+      },
+      {
+        "name": "focused margin textarea: z preserves native annotations",
+        "passed": true
+      },
+      {
+        "name": "after margin editor focus: PDF text receives pointer input",
+        "passed": true
+      },
+      {
+        "name": "after margin editor focus: selection used trusted pointer events",
+        "passed": true
+      },
+      {
+        "name": "after margin editor focus: native text drag cancellation remains intact",
+        "passed": true
+      },
+      {
+        "name": "after margin editor focus: selection popup is visible",
+        "passed": true
+      },
+      {
+        "name": "native highlighting works after typing in a margin editor",
+        "passed": true
+      },
+      {
+        "name": "cancelling keyboard scratch preserves the original native comment",
+        "passed": true
+      },
+      {
+        "name": "margin notes toggled off: PDF text receives pointer input",
+        "passed": true
+      },
+      {
+        "name": "margin notes toggled off: selection used trusted pointer events",
+        "passed": true
+      },
+      {
+        "name": "margin notes toggled off: native text drag cancellation remains intact",
+        "passed": true
+      },
+      {
+        "name": "margin notes toggled off: selection popup is visible",
+        "passed": true
+      },
+      {
+        "name": "after native Open from margin and toggle on: PDF text receives pointer input",
+        "passed": true
+      },
+      {
+        "name": "after native Open from margin and toggle on: selection used trusted pointer events",
+        "passed": true
+      },
+      {
+        "name": "after native Open from margin and toggle on: native text drag cancellation remains intact",
+        "passed": true
+      },
+      {
+        "name": "after native Open from margin and toggle on: selection popup is visible",
+        "passed": true
+      },
+      {
+        "name": "persisted comment edits update the card",
+        "passed": true
+      },
+      {
+        "name": "edited comment: cards are visible",
+        "passed": true
+      },
+      {
+        "name": "edited comment: cards avoid PDF pages",
+        "passed": true
+      },
+      {
+        "name": "edited comment: cards avoid each other",
+        "passed": true
+      },
+      {
+        "name": "edited comment: cards stay inside horizontal viewport",
+        "passed": true
+      },
+      {
+        "name": "margin notes expose no Edit buttons",
+        "passed": true
+      },
+      {
+        "name": "margin note card light surface stays opaque white and readable",
+        "passed": true
+      },
+      {
+        "name": "margin note card dark surface stays opaque white and readable",
+        "passed": true
+      },
+      {
+        "name": "card comment light selection remains readable",
+        "passed": true
+      },
+      {
+        "name": "card comment dark selection remains readable",
+        "passed": true
+      },
+      {
+        "name": "single-clicking a margin comment does not enter edit mode",
+        "passed": true
+      },
+      {
+        "name": "Enter is an accessible edit shortcut for focused comments",
+        "passed": true
+      },
+      {
+        "name": "margin cancel button is present",
+        "passed": true
+      },
+      {
+        "name": "F2 is an accessible edit shortcut for focused comments",
+        "passed": true
+      },
+      {
+        "name": "margin cancel button is present",
+        "passed": true
+      },
+      {
+        "name": "double-clicking highlighted quote text starts editing the note",
+        "passed": true
+      },
+      {
+        "name": "margin cancel button is present",
+        "passed": true
+      },
+      {
+        "name": "double-clicking a margin comment focuses and selects the textarea draft",
+        "passed": true
+      },
+      {
+        "name": "margin note textarea light surface stays opaque white and readable",
+        "passed": true
+      },
+      {
+        "name": "margin note textarea dark surface stays opaque white and readable",
+        "passed": true
+      },
+      {
+        "name": "card textarea light selection remains readable",
+        "passed": true
+      },
+      {
+        "name": "card textarea dark selection remains readable",
+        "passed": true
+      },
+      {
+        "name": "selected textarea draft range remains exact through a margin rerender",
+        "passed": true
+      },
+      {
+        "name": "trusted double-click inside an active textarea selects a non-empty word without resetting the draft",
+        "passed": true
+      },
+      {
+        "name": "active textarea word selection range remains exact through a margin rerender",
+        "passed": true
+      },
+      {
+        "name": "unsaved margin draft survives page navigation",
+        "passed": true
+      },
+      {
+        "name": "margin save button is present",
+        "passed": true
+      },
+      {
+        "name": "margin Save updates the native annotation without escaping literal text",
+        "passed": true
+      },
+      {
+        "name": "margin Save preserves highlight geometry, text, color, and tags",
+        "passed": true
+      },
+      {
+        "name": "margin Save reaches Zotero SQLite and item cache",
+        "passed": true
+      },
+      {
+        "name": "margin edits participate in native undo and persistence",
+        "passed": true
+      },
+      {
+        "name": "margin edits participate in native redo and persistence",
+        "passed": true
+      },
+      {
+        "name": "margin Save updates Zotero native sidebar text",
+        "passed": true
+      },
+      {
+        "name": "native sidebar edits synchronize back to margin cards and database",
+        "passed": true
+      },
+      {
+        "name": "margin cancel button is present",
+        "passed": true
+      },
+      {
+        "name": "Cancel preserves the native comment",
+        "passed": true
+      },
+      {
+        "name": "Cancel preserves the persisted comment",
+        "passed": true
+      },
+      {
+        "name": "margin save button is present",
+        "passed": true
+      },
+      {
+        "name": "conflict leaves the external annotation value intact",
+        "passed": true
+      },
+      {
+        "name": "conflict retains the unsaved textarea draft",
+        "passed": true
+      },
+      {
+        "name": "conflict is explained beside the editor",
+        "passed": true
+      },
+      {
+        "name": "margin cancel button is present",
+        "passed": true
+      },
+      {
+        "name": "external clearing retains the visible margin draft",
+        "passed": true
+      },
+      {
+        "name": "margin save button is present",
+        "passed": true
+      },
+      {
+        "name": "saving a draft after external clearing rejects the conflict",
+        "passed": true
+      },
+      {
+        "name": "external clearing stays persisted after rejected Save",
+        "passed": true
+      },
+      {
+        "name": "margin cancel button is present",
+        "passed": true
+      },
+      {
+        "name": "Cancel dismisses the retained draft of an empty comment",
+        "passed": true
+      },
+      {
+        "name": "margin save button is present",
+        "passed": true
+      },
+      {
+        "name": "file read-only state prevents saving an existing draft",
+        "passed": true
+      },
+      {
+        "name": "margin cancel button is present",
+        "passed": true
+      },
+      {
+        "name": "read-only annotations refuse double-click margin editing",
+        "passed": true
+      },
+      {
+        "name": "rich comment editing delegates to native sidebar",
+        "passed": true
+      },
+      {
+        "name": "rich comment markup is preserved",
+        "passed": true
+      },
+      {
+        "name": "zoom 115%: cards avoid PDF pages",
+        "passed": true
+      },
+      {
+        "name": "zoom 115%: cards avoid each other",
+        "passed": true
+      },
+      {
+        "name": "zoom 115%: cards stay inside horizontal viewport",
+        "passed": true
+      },
+      {
+        "name": "rotation 90 degrees: cards avoid PDF pages",
+        "passed": true
+      },
+      {
+        "name": "rotation 90 degrees: cards avoid each other",
+        "passed": true
+      },
+      {
+        "name": "rotation 90 degrees: cards stay inside horizontal viewport",
+        "passed": true
+      },
+      {
+        "name": "scrolled to page two: cards are visible",
+        "passed": true
+      },
+      {
+        "name": "scrolled to page two: cards avoid PDF pages",
+        "passed": true
+      },
+      {
+        "name": "scrolled to page two: cards avoid each other",
+        "passed": true
+      },
+      {
+        "name": "scrolled to page two: cards stay inside horizontal viewport",
+        "passed": true
+      },
+      {
+        "name": "second-page comment is visible after navigation",
+        "passed": true
+      },
+      {
+        "name": "dense comments: cards are visible",
+        "passed": true
+      },
+      {
+        "name": "dense comments: cards avoid PDF pages",
+        "passed": true
+      },
+      {
+        "name": "dense comments: cards avoid each other",
+        "passed": true
+      },
+      {
+        "name": "dense comments: cards stay inside horizontal viewport",
+        "passed": true
+      },
+      {
+        "name": "overflow tray exposes a separate Open header and editable comment body",
+        "passed": true
+      },
+      {
+        "name": "overflow tray light surface stays opaque white and readable",
+        "passed": true
+      },
+      {
+        "name": "overflow tray dark surface stays opaque white and readable",
+        "passed": true
+      },
+      {
+        "name": "overflow comment light selection remains readable",
+        "passed": true
+      },
+      {
+        "name": "overflow comment dark selection remains readable",
+        "passed": true
+      },
+      {
+        "name": "double-clicking the overflow Open header does not enter edit mode",
+        "passed": true
+      },
+      {
+        "name": "overflow textarea light selection remains readable",
+        "passed": true
+      },
+      {
+        "name": "overflow textarea dark selection remains readable",
+        "passed": true
+      },
+      {
+        "name": "overflow tray Save updates the native annotation and SQLite",
+        "passed": true
+      },
+      {
+        "name": "overflow tray shows the saved comment",
+        "passed": true
+      },
+      {
+        "name": "narrow viewport: cards avoid PDF pages",
+        "passed": true
+      },
+      {
+        "name": "narrow viewport: cards avoid each other",
+        "passed": true
+      },
+      {
+        "name": "narrow viewport: cards stay inside horizontal viewport",
+        "passed": true
+      },
+      {
+        "name": "narrow test actually reduced the viewport",
+        "passed": true
+      },
+      {
+        "name": "narrow viewport keeps cards safe or reports insufficient space",
+        "passed": true
+      },
+      {
+        "name": "narrow viewport after fit: cards are visible",
+        "passed": true
+      },
+      {
+        "name": "narrow viewport after fit: cards avoid PDF pages",
+        "passed": true
+      },
+      {
+        "name": "narrow viewport after fit: cards avoid each other",
+        "passed": true
+      },
+      {
+        "name": "narrow viewport after fit: cards stay inside horizontal viewport",
+        "passed": true
+      },
+      {
+        "name": "toolbar toggle hides cards",
+        "passed": true
+      },
+      {
+        "name": "toolbar toggle restores cards",
+        "passed": true
+      },
+      {
+        "name": "shutdown removes card overlays",
+        "passed": true
+      },
+      {
+        "name": "shutdown removes reader toolbar",
+        "passed": true
+      },
+      {
+        "name": "shutdown clears reader controllers",
+        "passed": true
+      },
+      {
+        "name": "shutdown restores the exact native keyboard guard",
+        "passed": true
+      },
+      {
+        "name": "native text selection after plugin shutdown: PDF text receives pointer input",
+        "passed": true
+      },
+      {
+        "name": "native text selection after plugin shutdown: selection used trusted pointer events",
+        "passed": true
+      },
+      {
+        "name": "native text selection after plugin shutdown: native text drag cancellation remains intact",
+        "passed": true
+      },
+      {
+        "name": "native text selection after plugin shutdown: selection popup is visible",
+        "passed": true
+      },
+      {
+        "name": "native text selection after plugin shutdown: trusted keyboard extends selected PDF text",
+        "passed": true
+      },
+      {
+        "name": "comment edits survive closing and reopening the PDF",
+        "passed": true
+      },
+      {
+        "name": "rich formatting survives closing and reopening the PDF",
+        "passed": true
+      }
+    ]
+  },
+  "nodeTests": {
+    "passed": 23,
+    "total": 23,
+    "otherPluginCheck": "Preserves a mocked toolbar listener belonging to another plugin during repeated start/stop; not a named add-on integration test"
+  },
+  "installedAddOnObservations": [
+    {
+      "name": "Margin Notes for Zotero",
+      "id": "margin-notes@local",
+      "version": "0.2.3",
+      "active": true,
+      "scope": "Installed-state observation only; named add-on workflows not tested"
+    },
+    {
+      "name": "Better BibTeX for Zotero",
+      "id": "better-bibtex@iris-advies.com",
+      "version": "9.0.70",
+      "active": true,
+      "scope": "Installed-state observation only; named add-on workflows not tested"
+    },
+    {
+      "name": "Translate for Zotero",
+      "id": "zoteropdftranslate@euclpts.com",
+      "version": "2.4.8",
+      "active": true,
+      "scope": "Installed-state observation only; named add-on workflows not tested"
+    },
+    {
+      "name": "Ethereal Style",
+      "id": "zoterostyle@polygon.org",
+      "version": "6.0.86",
+      "active": true,
+      "scope": "Installed-state observation only; named add-on workflows not tested"
+    },
+    {
+      "name": "Research Vault Bridge",
+      "id": "research-vault-bridge@local",
+      "version": "0.2.0",
+      "active": true,
+      "scope": "Installed-state observation only; named add-on workflows not tested"
+    },
+    {
+      "name": "ZotMoov",
+      "id": "zotmoov@wileyy.com",
+      "version": "1.2.32",
+      "active": false,
+      "scope": "Installed-state observation only; named add-on workflows not tested"
+    }
+  ],
+  "limits": [
+    "No complete workflow or automated combination tests for the named third-party add-ons",
+    "Windows and Linux were not included in this macOS validation"
+  ]
+}
