@@ -13,7 +13,8 @@ The JSON evidence is written to `dist/runtime-smoke-report.json`. Each geometry 
 - Production bootstrap loading and toolbar mounting.
 - Left/right placement on a real two-column PDF, non-overlap, and blank comments.
 - A persisted Zotero comment edit appearing in its margin card, native sidebar text, Zotero item cache, and SQLite annotation row.
-- Margin card editing, overflow editing, Save/Cancel behavior, empty-comment removal, external conflict handling, read-only handling, rich-comment delegation, native undo/redo, and reopen persistence.
+- Double-click margin card and overflow editing, Save/Cancel behavior, empty-comment removal, external conflict handling, read-only handling, rich-comment delegation, native undo/redo, and reopen persistence.
+- Readable selected text in note comments and editors in light/dark themes, keyboard selection, and preservation of existing drafts when double-clicking inside an active editor.
 - Native text-selection popups and annotation tools, including highlight, underline, comment editing, deletion, and drag start.
 - Keyboard selection, search, zoom, page navigation, and the native copy conversion handler. The copy check uses a synthetic copy event and does not touch the shared OS clipboard.
 - Annotation preservation while Delete, Backspace, Shift+Arrow, and Command+Z are dispatched from a focused margin comment.
@@ -46,6 +47,8 @@ Before mounting the DMG, CI verifies this SHA-256, computed from that official D
 ```
 
 ## Verified coverage
+
+Release candidate `0.2.2` passed **212/212** isolated Zotero 9.0.6 runtime checks and **23/23** Node tests on macOS on 2026-10-07. Syntax checks and the reproducible XPI build also passed. The new checks cover double-click editing in margin cards and overflow entries, Enter/F2 access, native header navigation, word selection inside an active editor, draft/selection preservation during rerender, and readable selection colors in both themes.
 
 Release candidate `0.2.1` passed **196/196** isolated Zotero 9.0.6 runtime checks and **23/23** Node tests on macOS on 2026-10-07. Syntax checks and the reproducible XPI build also passed. The runtime run verified restoration of the exact native focus guard, then repeated trusted PDF selection after plugin shutdown and reopened the PDF to verify persisted comments.
 

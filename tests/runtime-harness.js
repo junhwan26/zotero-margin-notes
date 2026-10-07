@@ -182,11 +182,20 @@ async function runSmoke(timers) {
     const readerDoc = readerWindow.document;
     const currentAnnotation = id => internal._state.annotations.find(a => a.id === id);
     const input = id => card(id)?.querySelector('textarea');
-    const beginEdit = async id => {
-      const edit = await waitFor('margin Edit button', () => card(id)?.querySelector('.mn-edit'));
-      check('editable margin card offers enabled Edit button', !edit.disabled);
-      edit.click();
-      return waitFor('margin textarea', () => input(id) && !input(id).closest('.mn-editor').hidden && input(id));
+    const visibleInput = id => {
+      const element = input(id);
+      return element && !element.closest('.mn-editor').hidden && element;
+    };
+    const beginEditFrom = async (id, target, label) => {
+      await native.doubleClick(target);
+      return waitFor(label + ' opens a margin textarea', () => visibleInput(id));
+    };
+    const beginEdit = async id => beginEditFrom(id, card(id)?.querySelector('.mn-comment'), 'double-clicking a margin comment');
+    const beginEditWithKey = async (id, keyName) => {
+      const comment = card(id)?.querySelector('.mn-comment');
+      comment.focus();
+      await native.pressKey(pdfWindow, keyName);
+      return waitFor(keyName + ' on a focused margin comment opens a textarea', () => visibleInput(id));
     };
     const typeDraft = (id, value) => {
       const editor = input(id);
@@ -199,6 +208,61 @@ async function runSmoke(timers) {
       check('margin ' + action + ' button is present', !!button);
       button.click();
     };
+    const parseColor = value => {
+      const text = String(value || '').trim();
+      if (text === 'transparent') return { r: 0, g: 0, b: 0, a: 0, raw: value };
+      const parts = text.match(/[\d.]+/g)?.map(Number) || [];
+      if (parts.length < 3) return { r: 0, g: 0, b: 0, a: 0, raw: value };
+      return { r: parts[0], g: parts[1], b: parts[2], a: parts.length > 3 ? parts[3] : 1, raw: value };
+    };
+    const relativeLuminance = ({ r, g, b }) => {
+      const convert = channel => {
+        const value = channel / 255;
+        return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+      };
+      return 0.2126 * convert(r) + 0.7152 * convert(g) + 0.0722 * convert(b);
+    };
+    const contrast = (a, b) => {
+      const light = Math.max(relativeLuminance(a), relativeLuminance(b));
+      const dark = Math.min(relativeLuminance(a), relativeLuminance(b));
+      return (light + 0.05) / (dark + 0.05);
+    };
+    const checkSelectionPalette = (label, element) => {
+      const original = overlay.layer.dataset.theme;
+      for (const theme of ['light', 'dark']) {
+        overlay.layer.dataset.theme = theme;
+        const style = pdfWindow.getComputedStyle(element, '::selection');
+        const fg = parseColor(style.color);
+        const bg = parseColor(style.backgroundColor);
+        check(label + ' ' + theme + ' selection remains readable',
+          fg.a >= 0.99 && bg.a >= 0.99 && contrast(fg, bg) >= 4.5,
+          { color: fg.raw, backgroundColor: bg.raw, contrast: contrast(fg, bg) });
+      }
+      overlay.layer.dataset.theme = original;
+    };
+    const selectedDraft = editor => editor.selectionEnd > editor.selectionStart;
+    const selectionRange = editor => ({
+      start: editor.selectionStart,
+      end: editor.selectionEnd,
+      text: editor.value.slice(editor.selectionStart, editor.selectionEnd),
+    });
+    check('margin notes expose no Edit buttons', !overlay.layer.querySelector('.mn-edit'));
+    checkSelectionPalette('card comment', card(right.key).querySelector('.mn-comment'));
+    await native.clickElement(card(right.key).querySelector('.mn-comment'));
+    await settle();
+    check('single-clicking a margin comment does not enter edit mode', !visibleInput(right.key));
+    await beginEditWithKey(right.key, 'Enter');
+    check('Enter is an accessible edit shortcut for focused comments', !!visibleInput(right.key));
+    clickAction(right.key, 'cancel');
+    await settle();
+    await beginEditWithKey(right.key, 'F2');
+    check('F2 is an accessible edit shortcut for focused comments', !!visibleInput(right.key));
+    clickAction(right.key, 'cancel');
+    await settle();
+    await beginEditFrom(lowerLeft.key, card(lowerLeft.key).querySelector('.mn-quote'), 'double-clicking a margin quote');
+    check('double-clicking highlighted quote text starts editing the note', !!visibleInput(lowerLeft.key));
+    clickAction(lowerLeft.key, 'cancel');
+    await settle();
     const savedComment = 'MARGIN SAVED: a < b & c\n한글 코멘트도 유지됩니다.';
     const commentBeforeSave = currentAnnotation(left.key).comment;
     const preservedFields = annotation => JSON.stringify({
@@ -206,8 +270,32 @@ async function runSmoke(timers) {
       tags: annotation.tags, position: annotation.position, sortIndex: annotation.sortIndex,
     });
     const fieldsBeforeSave = preservedFields(currentAnnotation(left.key));
-    await beginEdit(left.key);
+    const firstEditor = await beginEdit(left.key);
+    await waitFor('double-clicked margin textarea focus and draft selection', () =>
+      pdfWindow.document.activeElement?.isSameNode(firstEditor) && selectedDraft(firstEditor));
+    check('double-clicking a margin comment focuses and selects the textarea draft',
+      pdfWindow.document.activeElement?.isSameNode(firstEditor) && selectedDraft(firstEditor));
+    checkSelectionPalette('card textarea', firstEditor);
+    const fullDraftSelection = selectionRange(firstEditor);
+    overlay.schedule();
+    await settle();
+    check('selected textarea draft range remains exact through a margin rerender',
+      JSON.stringify(selectionRange(input(left.key))) === JSON.stringify(fullDraftSelection), {
+        before: fullDraftSelection, after: selectionRange(input(left.key)),
+      });
     typeDraft(left.key, savedComment).focus();
+    input(left.key).setSelectionRange(0, 0);
+    await native.doubleClick(input(left.key), { offsetX: 24, offsetY: 14 });
+    await settle();
+    const wordSelection = selectionRange(input(left.key));
+    check('trusted double-click inside an active textarea selects a non-empty word without resetting the draft',
+      input(left.key)?.value === savedComment && wordSelection.text.trim().length > 0, wordSelection);
+    overlay.schedule();
+    await settle();
+    check('active textarea word selection range remains exact through a margin rerender',
+      JSON.stringify(selectionRange(input(left.key))) === JSON.stringify(wordSelection), {
+        before: wordSelection, after: selectionRange(input(left.key)),
+      });
     await reader.navigate({ pageIndex: 1 });
     await settle();
     await reader.navigate({ pageIndex: 0 });
@@ -319,7 +407,10 @@ async function runSmoke(timers) {
     readonlyAnnotation.readOnly = true;
     internal.setAnnotations(Cu.cloneInto([readonlyAnnotation], reader._iframeWindow));
     await settle();
-    check('annotation read-only state disables margin editing', !!card(left.key)?.querySelector('.mn-edit')?.disabled);
+    await native.doubleClick(card(left.key).querySelector('.mn-comment'));
+    await settle();
+    check('read-only annotations refuse double-click margin editing',
+      !visibleInput(left.key) && card(left.key)?.querySelector('.mn-comment')?.getAttribute('aria-readonly') === 'true');
     readonlyAnnotation.readOnly = false;
     internal.setAnnotations(Cu.cloneInto([readonlyAnnotation], reader._iframeWindow));
     await settle();
@@ -328,7 +419,7 @@ async function runSmoke(timers) {
     const richComment = '<b>Rich text stays bold</b> and H<sub>2</sub>O';
     internal._annotationManager.updateAnnotations(Cu.cloneInto([{ id: lowerRight.key, comment: richComment }], reader._iframeWindow));
     await waitFor('rich comment margin card', () => card(lowerRight.key)?.textContent.includes('Rich text stays bold'));
-    card(lowerRight.key).querySelector('.mn-edit').click();
+    await native.doubleClick(card(lowerRight.key).querySelector('.mn-comment'));
     await waitFor('rich comment opened in native sidebar', () => internal._state.sidebarOpen && readerDoc.querySelector(`[data-sidebar-annotation-id="${lowerRight.key}"] .comment .content`));
     const richSidebar = readerDoc.querySelector(`[data-sidebar-annotation-id="${lowerRight.key}"] .comment .content`);
     check('rich comment editing delegates to native sidebar', !!richSidebar.querySelector('b') && (!input(lowerRight.key) || input(lowerRight.key).closest('.mn-editor').hidden));
@@ -364,13 +455,28 @@ async function runSmoke(timers) {
         .find(row => currentAnnotation(row.dataset.annotationId)?.comment.startsWith('DENSE ')));
     const overflowID = overflowRow.dataset.annotationId;
     const overflowItem = Zotero.Items.getByLibraryAndKey(attachment.libraryID, overflowID);
-    check('overflow tray exposes an annotation with an Edit action', !!overflowItem && !!overflowRow.querySelector('.mn-edit'));
-    overflowRow.querySelector('.mn-edit').click();
     const activeOverflowRow = () => overlay.layer.querySelector(`.mn-tray-row[data-annotation-id="${overflowID}"]`);
+    const reopenOverflowRow = async () => {
+      const row = activeOverflowRow();
+      if (row) return row;
+      await waitFor('dense comment overflow button after tray navigation', () => overlay.layer.querySelector('.mn-overflow')).click();
+      return waitFor('overflow comment row after tray navigation', activeOverflowRow);
+    };
+    check('overflow tray exposes a separate Open header and editable comment body',
+      !!overflowItem && !!overflowRow.querySelector('.mn-open-tray') && !!overflowRow.querySelector('.mn-comment') &&
+      !overflowRow.querySelector('.mn-edit'));
+    checkSelectionPalette('overflow comment', overflowRow.querySelector('.mn-comment'));
+    await native.doubleClick(overflowRow.querySelector('.mn-open-tray'));
+    await settle();
+    const rowAfterHeaderDblClick = await reopenOverflowRow();
+    check('double-clicking the overflow Open header does not enter edit mode',
+      !rowAfterHeaderDblClick.querySelector('textarea') || rowAfterHeaderDblClick.querySelector('.mn-editor')?.hidden);
+    await native.doubleClick(rowAfterHeaderDblClick.querySelector('.mn-comment'));
     const overflowInput = await waitFor('overflow comment editor', () => {
       const row = activeOverflowRow();
       return row && !row.querySelector('.mn-editor').hidden && row.querySelector('textarea');
     });
+    checkSelectionPalette('overflow textarea', overflowInput);
     const overflowValue = 'OVERFLOW SAVED: this hidden comment can be edited in the tray.';
     overflowInput.value = overflowValue;
     overflowInput.dispatchEvent(new pdfWindow.Event('input', { bubbles: true }));
@@ -379,7 +485,7 @@ async function runSmoke(timers) {
     await waitForPersistedComment(overflowItem, overflowValue);
     check('overflow tray Save updates the native annotation and SQLite', true);
     await waitFor('saved overflow comment is displayed', () => {
-      return activeOverflowRow()?.querySelector('.mn-open-tray')?.textContent === overflowValue ||
+      return activeOverflowRow()?.querySelector('.mn-comment')?.textContent === overflowValue ||
         card(overflowID)?.querySelector('.mn-comment')?.textContent === overflowValue;
     });
     check('overflow tray shows the saved comment', true);

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2 - 2026-10-07
+
+- Replace Edit buttons with double-click editing in margin notes and the overflow list. Enter and F2 also start editing when the comment is focused.
+- Keep double-click word selection inside an active editor and preserve drafts when entering edit mode again.
+- Restore readable selected text in note editors and comments in both light and dark themes, overriding the PDF reader's transparent selection background only inside margin notes.
+- Extend mandatory native Zotero tests to cover double-click editing, selected-text contrast, keyboard selection, drafts, read-only comments, and rich-text delegation.
+
 ## 0.2.1 - 2026-10-07
 
 - Fix a Zotero 9 native reader regression where the privileged focus guard wrapped native handlers with `original.apply(this, args)` and passed a privileged rest-args array into the PDF content window. Content code could not read that array's `length`, so native `dragstart` and keyboard handlers threw `Permission denied`.

@@ -51,7 +51,8 @@
       const definitions = {
         Meta: ['MetaLeft', 224], Control: ['ControlLeft', 17], Shift: ['ShiftLeft', 16],
         Escape: ['Escape', 27], Delete: ['Delete', 46], Backspace: ['Backspace', 8],
-        Enter: ['Enter', 13], ArrowRight: ['ArrowRight', 39], ArrowLeft: ['ArrowLeft', 37],
+        Enter: ['Enter', 13], F2: ['F2', 113],
+        ArrowRight: ['ArrowRight', 39], ArrowLeft: ['ArrowLeft', 37],
       };
       const event = value => {
         const definition = definitions[value] || ['Key' + value.toUpperCase(), value.toUpperCase().charCodeAt(0)];
@@ -65,6 +66,24 @@
       for (const modifier of modifiers.slice().reverse()) tip.keyup(event(modifier), flags(modifier));
       await settle();
     };
+    const clickElement = async element => click(element);
+    const doubleClick = async (element, options = {}) => {
+      if (!element) throw new Error('Missing native double-click target');
+      const target = element.ownerDocument.defaultView;
+      const r = await waitFor('visible native double-click target: ' + element.className, () => {
+        const rect = element.getBoundingClientRect();
+        return element.isConnected && rect.width > 0 && rect.height > 0 && !element.hidden && rect;
+      });
+      const x = r.left + (Number.isFinite(options.offsetX) ? options.offsetX : r.width / 2);
+      const y = r.top + (Number.isFinite(options.offsetY) ? options.offsetY : r.height / 2);
+      mouse(target, 'mousemove', x, y);
+      mouse(target, 'mousedown', x, y, 1, 1);
+      mouse(target, 'mouseup', x, y, 0, 1);
+      mouse(target, 'mousedown', x, y, 1, 2);
+      mouse(target, 'mouseup', x, y, 0, 2);
+      await settle();
+    };
+    const pressKey = async (target, name, modifiers = []) => key(target, name, modifiers);
     const typeText = async (element, text) => {
       await click(element);
       const target = element.ownerDocument.defaultView;
@@ -313,7 +332,7 @@
       await dragText('after margin comment focus', 18);
       await dismissSelection();
       await annotationAt(annotation, 'before margin editor keyboard protection');
-      await click(card(id).querySelector('.mn-edit'));
+      await doubleClick(card(id).querySelector('.mn-comment'));
       const editor = await waitFor('margin editor for native regression', () => {
         const element = card(id)?.querySelector('textarea');
         return element && !element.closest('.mn-editor').hidden && element;
@@ -343,7 +362,7 @@
       await dismissSelection();
     }
 
-    return { runCore, runFocusTransitions, runSelection, dragText, diagnostics };
+    return { runCore, runFocusTransitions, runSelection, dragText, diagnostics, clickElement, doubleClick, pressKey };
   }
 
   root.NativeRegression = { create };

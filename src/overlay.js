@@ -23,22 +23,28 @@
       align-items:center; justify-content:space-between; gap:8px; text-align:left;
       padding:8px 10px 5px; cursor:pointer; font-size:11px!important; color:var(--mn-muted)!important; }
     .mn-open:hover { background:#88888812; }
-    .mn-card-actions { display:flex; gap:4px; align-items:center; padding:0 8px 8px; }
-    .mn-card-actions button { border:1px solid var(--mn-border); border-radius:4px;
-      background:#8888880d; padding:1px 6px; cursor:pointer; font-size:11px!important; }
-    .mn-card-actions button:hover { background:#88888818; }
     .mn-editor { padding:0 8px 8px; display:flex; flex-direction:column; gap:6px; }
     .mn-editor textarea { width:100%; min-height:72px; max-height:140px; resize:none;
       box-sizing:border-box; background:#ffffff99; border:1px solid var(--mn-border);
       border-radius:4px; padding:6px; color:#24231f; }
     .mn-layer[data-theme="dark"] .mn-editor textarea { background:#1e1e1bcc; color:#eeeadd; }
+    /* Zotero's PDF viewer makes selection backgrounds transparent globally.
+       Notes contain real text, so restore readable selection colors here. */
+    .mn-layer textarea::selection, .mn-layer .mn-comment::selection,
+    .mn-layer .mn-comment *::selection, .mn-layer .mn-quote::selection {
+      color:#172b4d; background-color:#b4d6ff; }
+    .mn-layer[data-theme="dark"] textarea::selection,
+    .mn-layer[data-theme="dark"] .mn-comment::selection,
+    .mn-layer[data-theme="dark"] .mn-comment *::selection,
+    .mn-layer[data-theme="dark"] .mn-quote::selection {
+      color:#fff; background-color:#365d8a; }
     .mn-editor-actions { display:flex; gap:5px; justify-content:flex-end; }
     .mn-editor-actions button { border:1px solid var(--mn-border); border-radius:4px;
       background:#8888880d; padding:2px 7px; cursor:pointer; font-size:11px!important; }
     .mn-error { color:#a44435; font-size:11px; line-height:1.35; padding:0 10px 8px; }
     .mn-layer[data-theme="dark"] .mn-error { color:#ffb4a8; }
     .mn-open:focus-visible, .mn-overflow:focus-visible, .mn-tray button:focus-visible,
-    .mn-card-actions button:focus-visible, .mn-editor button:focus-visible,
+    .mn-editor button:focus-visible,
     .mn-editor textarea:focus-visible, .mn-comment:focus-visible { outline:2px solid #538bd5; outline-offset:-2px; }
     .mn-quote { margin:0 10px 6px; opacity:.68; font-size:11px; line-height:1.4;
       display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
@@ -54,11 +60,10 @@
     .mn-tray-heading button { background:none; border:0; cursor:pointer; }
     .mn-tray-list { overflow:auto; padding:0 8px 8px; }
     .mn-tray-row { border-top:1px solid var(--mn-border); padding:7px 0; }
-    .mn-tray-list button { display:block; width:100%; text-align:left; border:0;
-      border-top:1px solid var(--mn-border); padding:10px 3px; background:none; cursor:pointer;
-      white-space:pre-wrap; overflow-wrap:anywhere; }
-    .mn-tray-row > button { border-top:0; padding:3px; }
-    .mn-tray-row .mn-card-actions { padding:4px 3px 0; }
+    .mn-open-tray { display:block; width:100%; text-align:left; border:0;
+      padding:3px; background:none; cursor:pointer; font-size:11px!important;
+      color:var(--mn-muted)!important; }
+    .mn-tray-row .mn-comment { padding:3px; }
     .mn-tray-row .mn-editor { padding:4px 3px 0; }
     @media print { .mn-layer { display:none!important; } }
   `;
@@ -206,12 +211,6 @@
         card.comment = element(this.doc, 'div', 'mn-comment');
         card.comment.tabIndex = 0;
         card.comment.setAttribute('aria-label', this.owner.i18n.t('commentLabel'));
-        card.actions = element(this.doc, 'div', 'mn-card-actions');
-        card.edit = element(this.doc, 'button', 'mn-edit', this.owner.i18n.t('edit'));
-        card.edit.type = 'button';
-        card.edit.title = this.owner.i18n.t('editTitle');
-        card.edit.addEventListener('click', () => this.beginEdit(card.currentAnnotation));
-        card.actions.append(card.edit);
         card.error = element(this.doc, 'div', 'mn-error');
         card.error.hidden = true;
         card.editor = element(this.doc, 'div', 'mn-editor');
@@ -236,7 +235,8 @@
         card.cancel.addEventListener('click', () => this.cancelEdit(card.currentAnnotation?.id));
         editorActions.append(card.cancel, card.save);
         card.editor.append(card.input, editorActions);
-        card.append(card.open, card.quote, card.comment, card.actions, card.error, card.editor);
+        card.append(card.open, card.quote, card.comment, card.error, card.editor);
+        this.bindEditGesture(card, () => card.currentAnnotation);
         // Avoid handing note interaction to the PDF's selection/annotation tools.
         for (const type of ['pointerdown', 'mousedown', 'dblclick', 'keydown']) {
           card.addEventListener(type, event => event.stopPropagation());
@@ -248,7 +248,6 @@
       card.open.title = this.owner.i18n.t('openTitle');
       card.comment.setAttribute('aria-label', this.owner.i18n.t('commentLabel'));
       card.input.setAttribute('aria-label', this.owner.i18n.t('editorLabel'));
-      card.edit.textContent = this.owner.i18n.t('edit');
       card.save.textContent = this.owner.i18n.t('save');
       card.cancel.textContent = this.owner.i18n.t('cancel');
       if (card.rawComment !== annotation.comment) {
@@ -267,15 +266,10 @@
 
     renderCardEditState(card, annotation) {
       const edit = this.edits.get(annotation.id);
-      const canDirectEdit = !richComment(annotation.comment);
       card.comment.textContent = plainText(this.doc, annotation.comment);
-      card.edit.hidden = !!edit;
-      card.edit.disabled = this.owner.isReadOnly() || !!annotation.readOnly;
-      card.edit.textContent = this.owner.i18n.t(canDirectEdit ? 'edit' : 'edit');
-      card.edit.title = this.owner.i18n.t(canDirectEdit ? 'editTitle' : 'rich');
+      this.describeEditGesture(card.comment, annotation);
       card.editor.hidden = !edit;
       card.comment.hidden = !!edit;
-      card.actions.hidden = !!edit;
       if (edit) {
         if (card.input.value !== edit.draft) card.input.value = edit.draft;
         card.error.hidden = !edit.error;
@@ -298,8 +292,30 @@
       }
     }
 
+    describeEditGesture(comment, annotation) {
+      const readOnly = this.owner.isReadOnly() || !!annotation.readOnly;
+      comment.setAttribute('aria-readonly', String(readOnly));
+      comment.title = this.owner.i18n.t(readOnly ? 'readOnly' :
+        richComment(annotation.comment) ? 'editRichTitle' : 'editTitle');
+    }
+
+    bindEditGesture(note, getAnnotation) {
+      note.addEventListener('dblclick', event => {
+        // Keep native button actions and text selection inside an active editor.
+        if (event.target.closest('button, .mn-editor')) return;
+        event.preventDefault();
+        this.beginEdit(getAnnotation());
+      });
+      note.addEventListener('keydown', event => {
+        if (!event.target.classList.contains('mn-comment') ||
+          !['Enter', 'F2'].includes(event.key) || event.metaKey || event.ctrlKey || event.altKey) return;
+        event.preventDefault();
+        this.beginEdit(getAnnotation());
+      });
+    }
+
     beginEdit(annotation) {
-      if (!annotation?.id) return;
+      if (!annotation?.id || this.edits.has(annotation.id)) return;
       if (this.owner.isReadOnly() || annotation.readOnly) {
         this.setError(annotation.id, this.owner.i18n.t('readOnly'));
         return;
@@ -513,19 +529,19 @@
       for (const { annotation } of spec.annotations) {
         const row = element(this.doc, 'div', 'mn-tray-row');
         row.dataset.annotationId = annotation.id;
-        const button = element(this.doc, 'button', 'mn-open-tray', plainText(this.doc, annotation.comment));
+        const button = element(this.doc, 'button', 'mn-open-tray',
+          this.owner.i18n.t('openLabel', { page: annotation.pageLabel || spec.index + 1 }));
         button.type = 'button';
+        button.title = this.owner.i18n.t('openTitle');
         button.addEventListener('click', () => this.owner.navigate(annotation.id));
-        row.append(button);
+        const comment = element(this.doc, 'div', 'mn-comment', plainText(this.doc, annotation.comment));
+        comment.tabIndex = 0;
+        comment.setAttribute('aria-label', this.owner.i18n.t('commentLabel'));
+        this.describeEditGesture(comment, annotation);
         const edit = this.edits.get(annotation.id);
-        const actions = element(this.doc, 'div', 'mn-card-actions');
-        const editButton = element(this.doc, 'button', 'mn-edit', this.owner.i18n.t('edit'));
-        editButton.type = 'button';
-        editButton.disabled = this.owner.isReadOnly() || !!annotation.readOnly;
-        editButton.hidden = !!edit;
-        editButton.addEventListener('click', () => this.beginEdit(annotation));
-        actions.append(editButton);
-        actions.hidden = !!edit;
+        comment.hidden = !!edit;
+        row.append(button, comment);
+        this.bindEditGesture(row, () => annotation);
         const error = element(this.doc, 'div', 'mn-error');
         error.hidden = !(edit?.error || this.errors?.get(annotation.id));
         error.textContent = edit?.error || this.errors?.get(annotation.id) || '';
@@ -554,7 +570,7 @@
         save.addEventListener('click', () => this.saveEdit(annotation));
         editorActions.append(cancel, save);
         editor.append(input, editorActions);
-        row.append(actions, error, editor);
+        row.append(error, editor);
         list.append(row);
         if (edit?.focus) {
           this.win.requestAnimationFrame(() => {

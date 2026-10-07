@@ -8,7 +8,7 @@ Margin Notes for Zotero shows PDF highlight and underline comments as note cards
 
 - Shows commented highlights and underlines as margin cards outside the PDF page.
 - Places cards on the best left or right margin using annotation coordinates, margin width, distance, and collision cost.
-- Lets you edit plain-text comments directly from the margin card with explicit Save and Cancel controls.
+- Double-click a margin note or overflow comment to edit plain text, with explicit Save and Cancel controls.
 - Opens rich-text comments in Zotero's native editor so formatting is not flattened.
 - Preserves native PDF interactions, including text-selection popups, native annotation tools, keyboard selection, search, zoom, navigation, undo/redo, and annotation deletion.
 - Uses English by default and switches to Korean automatically for Korean Zotero locales.
@@ -16,7 +16,7 @@ Margin Notes for Zotero shows PDF highlight and underline comments as note cards
 
 ## Install
 
-1. Download `zotero-margin-notes-0.2.1.xpi` from the [latest GitHub release](https://github.com/junhwan26/zotero-margin-notes/releases/latest).
+1. Download `zotero-margin-notes-0.2.2.xpi` from the [latest GitHub release](https://github.com/junhwan26/zotero-margin-notes/releases/latest).
 2. In Zotero, open **Tools -> Plugins**.
 3. Choose the gear menu, then **Install Plugin From File...**.
 4. Select the XPI and open a PDF.
@@ -27,9 +27,11 @@ The old `v0.1.0` build used a placeholder update URL, so upgrading to `v0.2.0` o
 
 Open a PDF and add a comment to a highlight or underline. The note appears in the left or right outer margin. Use the toolbar button **Margin Notes** to toggle the overlay, and **Fit Notes** to adjust PDF zoom when the window is too narrow.
 
-Click **Edit** on a card to edit a plain-text comment in place. **Save** writes the change back to the Zotero annotation; **Cancel** keeps the existing comment. Saving an empty comment removes that card from the margin view because the plugin only displays annotations with comments.
+Double-click the body of a note to edit a plain-text comment in place. You can also focus the comment with Tab and press **Enter** or **F2**. **Save** writes the change back to the Zotero annotation; **Cancel** keeps the existing comment. Saving an empty comment removes that card from the margin view because the plugin only displays annotations with comments.
 
-If a comment contains rich text, the edit action opens the native Zotero annotation editor. This keeps formatting such as bold, italics, subscript, and superscript intact.
+Double-clicking a comment containing rich text opens the native Zotero annotation editor. This keeps formatting such as bold, italics, subscript, and superscript intact.
+
+Text selected while editing stays readable in both light and dark themes. The page header on each note opens the original annotation in Zotero; double-clicking inside an active editor retains normal word selection.
 
 ## Compatibility
 

@@ -5,8 +5,8 @@
   const EN = {
     layerLabel: 'Highlight margin notes',
     openTitle: 'Open this highlight and comment in Zotero',
-    editTitle: 'Edit this comment in the margin note',
-    editRichTitle: 'Open rich-text comments in Zotero to preserve formatting',
+    editTitle: 'Double-click to edit this comment. Keyboard: Enter or F2.',
+    editRichTitle: 'Double-click to edit in Zotero and preserve formatting. Keyboard: Enter or F2.',
     commentLabel: 'Highlight comment',
     editorLabel: 'Edit highlight comment',
     commentHeading: 'Comment',
@@ -47,8 +47,8 @@
   const KO = {
     layerLabel: '하이라이트 여백 노트',
     openTitle: 'Zotero에서 이 하이라이트와 코멘트 열기',
-    editTitle: '여백 노트에서 이 코멘트 수정',
-    editRichTitle: '서식을 보존하려면 Zotero에서 코멘트 열기',
+    editTitle: '더블클릭하여 코멘트 수정. 키보드: Enter 또는 F2.',
+    editRichTitle: '더블클릭하여 Zotero에서 서식을 유지하며 수정. 키보드: Enter 또는 F2.',
     commentLabel: '하이라이트 코멘트',
     editorLabel: '하이라이트 코멘트 수정',
     commentHeading: '코멘트',
