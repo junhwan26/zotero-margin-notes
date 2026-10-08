@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Margin Notes for Zotero",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "Read and edit highlight comments in the PDF's outer margins, with automatic left/right placement.",
   "author": "Junhwan",
   "homepage_url": "https://github.com/junhwan26/zotero-margin-notes",
@@ -9,7 +9,7 @@
     "zotero": {
       "id": "margin-notes@local",
       "strict_min_version": "9.0",
-      "strict_max_version": "9.0.*",
+      "strict_max_version": "10.0.*",
       "update_url": "https://raw.githubusercontent.com/junhwan26/zotero-margin-notes/main/updates.json"
     }
   }

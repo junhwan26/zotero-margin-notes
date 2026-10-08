@@ -104,14 +104,14 @@
   }
 
   class FrameOverlay {
-    constructor(owner, view, win, app) {
+    constructor(owner, view, win, app, edits = new Map()) {
       this.owner = owner;
       this.view = view;
       this.win = win;
       this.app = app;
       this.doc = win.document;
       this.cards = new Map();
-      this.edits = new Map();
+      this.edits = edits;
       this.cleanups = [];
       this.destroyed = false;
       this.pending = 0;
@@ -640,6 +640,7 @@
       this.reader = reader;
       this.app = app;
       this.frames = new Map();
+      this.suspendedDrafts = new Map();
       this.enabled = app.enabled;
       this.i18n = app.i18n;
       this.toolbar = null;
@@ -664,6 +665,7 @@
       fit.type = 'button';
       fit.title = this.i18n.t('fitTitle');
       fit.addEventListener('click', () => {
+        this.sync();
         this.app.setEnabled(true);
         for (const frame of this.frames.values()) frame.fit();
       });
@@ -686,7 +688,8 @@
       this.toggle.style.background = this.enabled ? '#b9ab7430' : 'transparent';
       const noSpace = [...this.frames.values()].reduce((sum, frame) => sum + (frame.noSpace || 0), 0);
       let message = '';
-      if (this.enabled && !this.frames.size) message = this.i18n.t('preparing');
+      if (this.enabled && this.readingModeOnly) message = this.i18n.t('readingMode');
+      else if (this.enabled && !this.frames.size) message = this.i18n.t('preparing');
       else if (this.enabled && noSpace) message = this.i18n.t('noSpace', { count: noSpace });
       this.status.textContent = message;
       this.status.title = noSpace ? this.i18n.t('noSpaceTitle') : message;
@@ -695,7 +698,19 @@
     sync() {
       const inner = this.reader._internalReader;
       const live = new Set();
-      for (const view of [inner?._primaryView, inner?._secondaryView]) {
+      const panes = [
+        [inner?._primaryView, inner?._state?.primaryReadingModeEnabled],
+        [inner?._secondaryView, inner?._state?.secondaryReadingModeEnabled],
+      ];
+      const openPanes = panes.filter(([view]) => view);
+      for (const view of this.suspendedDrafts.keys()) {
+        if (!openPanes.some(([pane]) => pane === view)) this.suspendedDrafts.delete(view);
+      }
+      this.readingModeOnly = openPanes.length > 0 && openPanes.every(([, readingMode]) => readingMode);
+      for (const [view, readingMode] of panes) {
+        // Zotero 10 keeps the PDF iframe alive underneath Reading Mode.
+        // Suspend that pane so Fit Notes cannot zoom the hidden PDF view.
+        if (readingMode) continue;
         const raw = view?._iframeWindow;
         const win = raw?.wrappedJSObject || raw;
         const app = win?.PDFViewerApplication;
@@ -706,11 +721,19 @@
         if (existing && existing.doc !== win.document) {
           existing.destroy(); this.frames.delete(view);
         }
-        if (!this.frames.has(view)) this.frames.set(view, new FrameOverlay(this, view, win, app));
+        if (!this.frames.has(view)) {
+          this.frames.set(view, new FrameOverlay(this, view, win, app, this.suspendedDrafts.get(view)));
+          this.suspendedDrafts.delete(view);
+        }
         this.frames.get(view).snapshot();
       }
       for (const [view, frame] of this.frames) {
-        if (!live.has(view)) { frame.destroy(); this.frames.delete(view); }
+        if (!live.has(view)) {
+          if (panes.some(([pane, readingMode]) => pane === view && readingMode)) {
+            this.suspendedDrafts.set(view, frame.edits);
+          }
+          frame.destroy(); this.frames.delete(view);
+        }
       }
       // renderToolbar may already have fired before the extension was enabled.
       if (!this.toolbar?.isConnected) {
@@ -770,6 +793,7 @@
     destroy() {
       for (const frame of this.frames.values()) frame.destroy();
       this.frames.clear();
+      this.suspendedDrafts.clear();
       this.toolbar?.remove();
     }
   }
@@ -819,7 +843,8 @@
       this.running = false;
       root.clearInterval(this.interval);
       // Zotero 9.0.6's public unregisterEventListener has an inverted filter.
-      // This plugin-ID cleanup is also used by Zotero's own plugin shutdown path.
+      // Plugin-ID cleanup works in both Zotero 9 and 10 and is also used by
+      // Zotero's own plugin shutdown path.
       root.Zotero.Reader._unregisterEventListenerByPluginID?.(ID);
       for (const controller of this.controllers.values()) controller.destroy();
       this.controllers.clear();

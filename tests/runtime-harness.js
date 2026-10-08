@@ -57,6 +57,13 @@ async function runSmoke(timers) {
   };
   const overlaps = (a, b) => a.left < b.right - 0.75 && a.right > b.left + 0.75 && a.top < b.bottom - 0.75 && a.bottom > b.top + 0.75;
   try {
+    const expectedVersion = Services.prefs.getStringPref('extensions.zotero.marginSmoke.expectedVersion', '');
+    if (expectedVersion) {
+      report.expectedVersion = expectedVersion;
+      await mark('checking Zotero version');
+      check('launched Zotero version matches the requested test version',
+        Zotero.version === expectedVersion, { expected: expectedVersion, actual: Zotero.version });
+    }
     await mark('initializing Zotero');
     await bounded('Zotero initialization', Zotero.initializationPromise);
     await bounded('Zotero UI', Zotero.uiReadyPromise);
@@ -528,6 +535,91 @@ async function runSmoke(timers) {
     toggle.click();
     await waitFor('toggle re-enabled cards', () => overlay.layer.querySelector('.mn-card'));
     check('toolbar toggle restores cards', true);
+    if (typeof internal._setReadingMode === 'function') {
+      await mark('checking Zotero 10 Reading Mode flag suspension and resume');
+      // The synthetic PDF has no SDT pack. Exercise the real PDF pane using the
+      // state/visibility contract of Reading Mode without claiming SDT UI tests.
+      report.readingModeCoverage = { controlledPrimaryFlag: true, fullSDTViewTested: false };
+      const draftCard = await waitFor('editable card before Reading Mode flag transition', () =>
+        Array.from(overlay.layer.querySelectorAll('.mn-card')).find(node => {
+          const annotation = currentAnnotation(node.dataset.annotationId);
+          const rect = node.getBoundingClientRect();
+          return annotation && !/<\/?(?:i|b|sub|sup)\b/i.test(annotation.comment || '') && rect.width > 0 && rect.height > 0;
+        }));
+      const draftID = draftCard.dataset.annotationId;
+      const commentBeforeReadingMode = currentAnnotation(draftID).comment || '';
+      const unsavedReadingModeDraft = 'UNSAVED Reading Mode draft: preserve this comment without saving it.';
+      await native.doubleClick(draftCard.querySelector('.mn-comment'));
+      const draftInput = await waitFor('draft editor before Reading Mode flag transition', () =>
+        !draftCard.querySelector('.mn-editor').hidden && draftCard.querySelector('textarea'));
+      draftInput.value = unsavedReadingModeDraft;
+      draftInput.dispatchEvent(new pdfWindow.Event('input', { bubbles: true }));
+      const editsBeforeReadingMode = overlay.edits;
+      const previousReadingMode = internal._state.primaryReadingModeEnabled;
+      const previousPDFStyle = iframe.getAttribute('style');
+      const scaleBeforeReadingMode = pdf.currentScale;
+      try {
+        internal._state.primaryReadingModeEnabled = true;
+        iframe.style.visibility = 'hidden';
+        iframe.style.position = 'absolute';
+        // Click before the polling interval: stale frames must not zoom a PDF
+        // pane that has already become hidden underneath Reading Mode.
+        reader._iframeWindow.document.querySelector('.mn-fit').click();
+        check('Reading Mode flag: immediate Fit Notes leaves hidden PDF scale unchanged', pdf.currentScale === scaleBeforeReadingMode);
+        controller.sync();
+        check('Reading Mode flag: primary PDF overlay is suspended', !controller.frames.has(view));
+        check('Reading Mode flag: suspension retains the exact unsaved comment draft',
+          controller.suspendedDrafts.get(view) === editsBeforeReadingMode &&
+          controller.suspendedDrafts.get(view)?.get(draftID)?.draft === unsavedReadingModeDraft);
+        check('Reading Mode flag: hidden PDF has no note layer', !doc.querySelector('.mn-layer'));
+        check('Reading Mode flag: suspension restores the exact native focus guard', view._textAnnotationFocused === originalTextFocusedGuard);
+        check('Reading Mode flag: toolbar explains why PDF notes are paused', controller.status.textContent === plugin.i18n.t('readingMode'));
+        reader._iframeWindow.document.querySelector('.mn-fit').click();
+        await settle();
+        check('Reading Mode flag: Fit Notes after suspension preserves hidden PDF scale', pdf.currentScale === scaleBeforeReadingMode);
+      } finally {
+        internal._state.primaryReadingModeEnabled = previousReadingMode;
+        if (previousPDFStyle === null) iframe.removeAttribute('style'); else iframe.setAttribute('style', previousPDFStyle);
+        controller.sync();
+      }
+      await waitFor('PDF notes resume after Reading Mode flag clears', () =>
+        controller.frames.get(view)?.layer.querySelector('.mn-card'));
+      check('Reading Mode flag: returning to PDF resumes margin cards', controller.frames.has(view));
+      check('Reading Mode flag: resumed cards reinstall the text-focus guard', view._textAnnotationFocused !== originalTextFocusedGuard);
+      const resumedFrame = controller.frames.get(view);
+      check('Reading Mode flag: resumed pane owns the retained draft map',
+        resumedFrame.edits === editsBeforeReadingMode && !controller.suspendedDrafts.has(view) &&
+        resumedFrame.edits.get(draftID)?.draft === unsavedReadingModeDraft);
+      // A restored editor is taller than its comment, so this deliberately
+      // crowded fixture may place it in the overflow tray instead of a card.
+      const resumedDraftRow = () => resumedFrame.layer.querySelector(
+        `.mn-card[data-annotation-id="${draftID}"],.mn-tray-row[data-annotation-id="${draftID}"]`);
+      let restoredDraftRow = resumedDraftRow();
+      const overflowCount = resumedFrame.layer.querySelectorAll('.mn-overflow').length;
+      for (let index = 0; !restoredDraftRow && index < overflowCount; index++) {
+        const button = resumedFrame.layer.querySelectorAll('.mn-overflow')[index];
+        if (!button) continue;
+        await native.clickElement(button);
+        await settle();
+        restoredDraftRow = resumedDraftRow();
+      }
+      const draftResumeDetails = {
+        draftID, cards: resumedFrame.cards.size, overflowButtons: overflowCount,
+        draftRetained: resumedFrame.edits.get(draftID)?.draft === unsavedReadingModeDraft,
+        ui: restoredDraftRow?.classList.contains('mn-tray-row') ? 'overflow' : restoredDraftRow ? 'card' : 'missing',
+      };
+      report.readingModeCoverage.restoredDraftUI = draftResumeDetails.ui;
+      check('Reading Mode flag: returning to PDF restores the unsaved textarea draft',
+        restoredDraftRow && !restoredDraftRow.querySelector('.mn-editor').hidden &&
+        restoredDraftRow.querySelector('textarea').value === unsavedReadingModeDraft, draftResumeDetails);
+      restoredDraftRow.querySelector('.mn-cancel').click();
+      await waitFor('restored unsaved draft is cancelled', () => !resumedFrame.edits.has(draftID));
+      const draftItem = Zotero.Items.getByLibraryAndKey(attachment.libraryID, draftID);
+      await waitForPersistedComment(draftItem, commentBeforeReadingMode);
+      check('Reading Mode flag: cancelling the restored draft preserves native and persisted comments',
+        (currentAnnotation(draftID).comment || '') === commentBeforeReadingMode);
+      await native.runSelection('native text selection after Reading Mode flag resume', 24);
+    }
     smokeProduction.shutdown();
     await settle();
     check('shutdown removes card overlays', !doc.querySelector('.mn-layer'));

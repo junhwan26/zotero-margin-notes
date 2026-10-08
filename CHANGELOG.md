@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 - 2026-10-08
+
+- Extend the manifest compatibility range to Zotero 10.0.* after adding Zotero 10-focused runtime handling.
+- Suspend margin notes per PDF pane while Zotero 10 Reading Mode is active, then resume them when that pane returns to PDF view.
+- Make Fit Notes skip hidden Reading Mode PDF panes so it only adjusts the visible PDF view.
+- Preserve unsaved margin-note drafts across temporary Reading Mode suspension, including overflow editor drafts and Cancel behavior that leaves annotation data unchanged.
+- Add a Zotero 9.0.6 and 10.0.6 native CI matrix with version checking for each launched Zotero app.
+- Verify the release candidate with 26 Node tests, 219 native checks on Zotero 9.0.6, and 236 native checks on Zotero 10.0.6.
+
 ## 0.2.3 - 2026-10-07
 
 - Give margin notes, overflow lists, and editors an opaque white background in both PDF themes.

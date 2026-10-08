@@ -40,6 +40,7 @@
     toolbarFitTitle: 'Adjust PDF zoom to make room for margin notes',
     fitTitle: 'Adjust PDF zoom to make room for margin notes',
     preparing: 'Preparing PDF',
+    readingMode: 'Notes appear in PDF view',
     noSpace: 'No margin ({count})',
     noSpaceTitle: 'Use Fit Notes, zoom out, or widen the window. Comments remain in Zotero.',
   };
@@ -82,6 +83,7 @@
     toolbarFitTitle: '노트 공간이 생기도록 PDF 배율 조정',
     fitTitle: '노트 공간이 생기도록 PDF 배율 조정',
     preparing: 'PDF 준비 중',
+    readingMode: 'PDF 보기에서 노트 표시',
     noSpace: '여백 부족 ({count})',
     noSpaceTitle: '노트에 맞춤을 누르거나 PDF를 축소하거나 창을 넓히세요. 코멘트는 Zotero에 그대로 있습니다.',
   };

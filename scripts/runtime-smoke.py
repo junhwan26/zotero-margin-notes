@@ -47,6 +47,7 @@ def make_pdf(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--app', default='/Applications/Zotero.app/Contents/MacOS/zotero')
+    parser.add_argument('--expect-version', help='Fail before reader tests if the launched Zotero version differs from this exact version')
     parser.add_argument('--timeout', type=int, default=150)
     parser.add_argument('--report', type=Path, default=ROOT / 'dist/runtime-smoke-report.json')
     parser.add_argument('--visual-hold', type=int, default=0, help='Pause at the baseline for this many seconds for native app visual review')
@@ -89,6 +90,7 @@ def main():
         'browser.shell.checkDefaultBrowser': False,
         'extensions.zotero.marginSmoke.path': str(temp),
         'extensions.zotero.marginSmoke.visualHold': args.visual_hold,
+        'extensions.zotero.marginSmoke.expectedVersion': args.expect_version or '',
     }
     (profile / 'user.js').write_text(''.join(f'user_pref({json.dumps(k)}, {json.dumps(v)});\n' for k, v in prefs.items()))
     manifest = json.loads((ROOT / 'manifest.json').read_text())
@@ -138,7 +140,7 @@ def main():
             report['retainedTemporaryDirectory'] = str(temp)
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(json.dumps(report, indent=2, ensure_ascii=False) + '\n')
-        print(json.dumps({key: report[key] for key in ('complete', 'passed', 'version', 'error', 'stage', 'retainedTemporaryDirectory') if key in report}, indent=2, ensure_ascii=False))
+        print(json.dumps({key: report[key] for key in ('complete', 'passed', 'version', 'expectedVersion', 'error', 'stage', 'retainedTemporaryDirectory') if key in report}, indent=2, ensure_ascii=False))
         print(f"Checks: {sum(check['passed'] for check in report.get('checks', []))}/{len(report.get('checks', []))} passed")
         print(f'Report: {args.report}')
         return 0 if report.get('passed') and report.get('complete') else 1

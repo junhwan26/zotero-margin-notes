@@ -3,13 +3,13 @@
     "margin-notes@local": {
       "updates": [
         {
-          "version": "0.2.3",
-          "update_link": "https://github.com/junhwan26/zotero-margin-notes/releases/download/v0.2.3/zotero-margin-notes-0.2.3.xpi",
-          "update_hash": "sha256:c4a92ab3819025b1f2c7ae96acb332ab3820039dc061a6ac623db64b0776426c",
+          "version": "0.3.0",
+          "update_link": "https://github.com/junhwan26/zotero-margin-notes/releases/download/v0.3.0/zotero-margin-notes-0.3.0.xpi",
+          "update_hash": "sha256:a9a6ef4e1017c3a862c402a0be6995a86dac2b3a935d8c48bc791096e27e7449",
           "applications": {
             "zotero": {
               "strict_min_version": "9.0",
-              "strict_max_version": "9.0.*"
+              "strict_max_version": "10.0.*"
             }
           }
         }
