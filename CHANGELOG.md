@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 - 2026-10-08
+
+- Display comments from Zotero note annotations in the outer PDF margins, alongside highlight and underline comments.
+- Keep double-click editing, sidebar synchronization, blank-comment filtering, and Zotero 10 Reading Mode handling for note comments.
+- Add native regression coverage for note-card visibility, editing, cancellation, persistence, and native reader selection.
+
 ## 0.3.0 - 2026-10-08
 
 - Extend the manifest compatibility range to Zotero 10.0.* after adding Zotero 10-focused runtime handling.

@@ -1,6 +1,6 @@
 <h1 align="center">Zotero 여백 노트</h1>
 
-<p align="center">PDF 하이라이트 코멘트를 논문 바깥 여백에 띄우고, 두 단 논문에서는 왼쪽/오른쪽 위치를 자동으로 고릅니다.</p>
+<p align="center">PDF 주석 코멘트를 논문 바깥 여백에 띄우고, 두 단 논문에서는 왼쪽/오른쪽 위치를 자동으로 고릅니다.</p>
 
 <p align="center">
   <a href="https://github.com/junhwan26/zotero-margin-notes/actions/workflows/ci.yml"><img alt="Check" src="https://github.com/junhwan26/zotero-margin-notes/actions/workflows/ci.yml/badge.svg"></a>
@@ -25,17 +25,17 @@
 
 | 기능 | 설명 |
 | --- | --- |
-| 여백 노트 카드 | PDF 하이라이트나 밑줄의 코멘트를 페이지 바깥 흰색 카드로 보여 줍니다. |
+| 여백 노트 카드 | PDF 하이라이트·밑줄·메모 주석의 코멘트를 페이지 바깥 흰색 카드로 보여 줍니다. |
 | 두 단 배치 | 주석 좌표, 남은 여백, 주변 카드 혼잡도를 보고 왼쪽 또는 오른쪽 바깥 여백을 고릅니다. |
 | Zotero 10 읽기 모드 안전 처리 | Zotero 읽기 모드가 켜진 리더 화면에서는 여백 노트를 잠시 멈추고, PDF 보기로 돌아오면 다시 표시합니다. |
 | 기존 리더 동작 보존 | 텍스트 선택, 선택 팝업, 주석 도구, 키보드 선택, 검색, 확대/축소, 페이지 이동, 삭제, 실행 취소/다시 실행, 사이드바 수정을 계속 사용할 수 있습니다. |
 
 ## 빠른 시작
 
-1. [최신 릴리스](https://github.com/junhwan26/zotero-margin-notes/releases/latest)에서 `zotero-margin-notes-0.3.0.xpi`를 내려받습니다.
+1. [최신 릴리스](https://github.com/junhwan26/zotero-margin-notes/releases/latest)에서 `zotero-margin-notes-0.3.1.xpi`를 내려받습니다.
 2. Zotero에서 **Tools -> Plugins**를 엽니다.
 3. 톱니바퀴 메뉴에서 **Install Plugin From File...**을 누르고 XPI를 선택합니다.
-4. PDF를 열고 하이라이트나 밑줄에 코멘트를 단 뒤, 리더 도구막대의 **Margin Notes** 또는 **여백 노트**를 사용합니다.
+4. PDF를 열고 하이라이트·밑줄·메모 주석에 코멘트를 단 뒤, 리더 도구막대의 **Margin Notes** 또는 **여백 노트**를 사용합니다.
 
 <details>
 <summary>0.1.0에서 업그레이드</summary>
@@ -63,7 +63,11 @@
 
 Margin Notes는 필수로 설치해야 하는 다른 Zotero 플러그인이 없고, npm 런타임 패키지 의존성도 없습니다. 대상은 Zotero `9.0`부터 `10.0.*`까지이며, Zotero `9.0.6`과 `10.0.6` 실제 앱에서 검증했습니다. PDF 전용 플러그인이므로 EPUB와 웹 스냅샷에는 적용되지 않습니다.
 
-`0.3.0` 빌드는 단위 검사 26개, 업데이트 정보 확인, 문법 검사, 재현 가능한 빌드, Zotero `9.0.6` 실제 앱 검사 219/219개, Zotero `10.0.6` 실제 앱 검사 236/236개를 통과했습니다. Zotero 10.0.6에 설치된 파일이 검사한 빌드와 일치했습니다. 의존성 감사, 검사 목록, 다른 플러그인의 활성화 상태는 [호환성 검사 기록](docs/compatibility.ko.md)과 [0.3.0 공개 검사 요약](docs/evidence/compatibility-0.3.0.json)에서 확인할 수 있습니다.
+`0.3.1` 릴리스는 표시 대상을 하이라이트와 밑줄에서 Zotero 메모 주석까지 확장합니다. 메모 주석에는 선택된 원문 인용문이 없으므로 여백 카드는 인용문 영역을 숨기고 주석 코멘트만 보여 줍니다.
+
+`0.3.1` 빌드는 Node 검사 26개, 업데이트 정보 확인, 문법 검사, diff 검사, 재현 가능한 빌드, Zotero `9.0.6` 실제 앱 검사 246/246개, Zotero `10.0.6` 실제 앱 검사 263/263개를 통과했습니다. 현재 XPI와 Zotero 10.0.6에 설치된 파일의 SHA-256은 모두 `9648934bc1566ac7557bd6701ec54288c786a6ec02aa2752e749ecfc7db6922f`입니다. 로컬 Zotero 10.0.6 UI에서 Margin Notes 0.3.1 활성 상태를 확인했고, 기존 Zotero 메모 주석이 있는 실제 PDF 7쪽에서 접근성 트리를 통해 노트 카드 2개가 보이는 것을 확인했습니다. 의존성 감사, 검사 목록, 다른 플러그인의 활성화 상태는 [호환성 검사 기록](docs/compatibility.ko.md)과 [0.3.1 공개 검사 요약](docs/evidence/compatibility-0.3.1.json)에서 확인할 수 있습니다.
+
+과거 `0.3.0` 근거는 [0.3.0 공개 검사 요약](docs/evidence/compatibility-0.3.0.json)에 남겨 두었습니다.
 
 과거 `0.2.3` 근거도 유지합니다. `0.2.3`은 [Zotero 9.0.6 실제 검사 218개](https://github.com/junhwan26/zotero-margin-notes/actions/runs/37580613959)와 Node 테스트 23개를 통과했습니다. 2026-10-07 Better BibTeX, Translate for Zotero, Ethereal Style, Research Vault Bridge, 비활성 ZotMoov 관찰 기록은 Zotero 9.0.6 시기의 로컬 설치 상태이며, Zotero 10 통합 인증이 아닙니다.
 

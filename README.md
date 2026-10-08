@@ -1,6 +1,6 @@
 <h1 align="center">Margin Notes for Zotero</h1>
 
-<p align="center">Read and edit PDF highlight comments in the left or right outer margin, chosen automatically for two-column papers.</p>
+<p align="center">Read and edit PDF annotation comments in the left or right outer margin, chosen automatically for two-column papers.</p>
 
 <p align="center">
   <a href="https://github.com/junhwan26/zotero-margin-notes/actions/workflows/ci.yml"><img alt="Check" src="https://github.com/junhwan26/zotero-margin-notes/actions/workflows/ci.yml/badge.svg"></a>
@@ -25,17 +25,17 @@
 
 | Feature | What it does |
 | --- | --- |
-| Margin note cards | Shows comments from highlighted or underlined PDF text as white cards outside the page. |
+| Margin note cards | Shows comments from highlights, underlines, and note annotations as white cards outside the page. |
 | Two-column placement | Chooses the left or right outer margin from annotation coordinates, available room, and nearby card congestion. |
 | Zotero 10 Reading Mode safety | Suspends margin notes per reader pane while Zotero Reading Mode is active, then resumes when the pane returns to PDF view. |
 | Zotero workflow preservation | Keeps text selection, selection popups, annotation tools, keyboard selection, search, zoom, page navigation, deletion, undo/redo, and sidebar edits working. |
 
 ## Quick Start
 
-1. Download `zotero-margin-notes-0.3.0.xpi` from the [latest release](https://github.com/junhwan26/zotero-margin-notes/releases/latest).
+1. Download `zotero-margin-notes-0.3.1.xpi` from the [latest release](https://github.com/junhwan26/zotero-margin-notes/releases/latest).
 2. In Zotero, open **Tools -> Plugins**.
 3. Open the gear menu, choose **Install Plugin From File...**, and select the XPI.
-4. Open a PDF, add a comment to a highlight or underline, then use **Margin Notes** in the reader toolbar.
+4. Open a PDF, add a comment to a highlight, underline, or note annotation, then use **Margin Notes** in the reader toolbar.
 
 <details>
 <summary>Upgrading from 0.1.0</summary>
@@ -63,7 +63,11 @@ White notes and editors remain readable in both PDF themes. Comments are saved i
 
 Margin Notes has no required third-party Zotero add-on and no npm runtime package dependency. It targets Zotero `9.0` through `10.0.*`, with native validation on Zotero `9.0.6` and `10.0.6`. The plugin is PDF-only; EPUB and web snapshots are ignored.
 
-The `0.3.0` build passed 26 Node tests, update metadata verification, syntax checks, a reproducible build, 219/219 native checks on Zotero `9.0.6`, and 236/236 native checks on Zotero `10.0.6`. The package installed in Zotero 10.0.6 matched the tested build. Read the [compatibility notes](docs/compatibility.md) and [public 0.3.0 evidence](docs/evidence/compatibility-0.3.0.json) for the dependency audit, check inventory, and observed add-on state.
+The `0.3.1` release expands the display scope from highlights and underlines to Zotero note annotations. Note annotations do not have a selected-text quote, so their margin cards hide the quote area and show the annotation comment.
+
+The `0.3.1` build passed 26 Node tests, update metadata verification, syntax checks, diff checks, a reproducible build, 246/246 native checks on Zotero `9.0.6`, and 263/263 native checks on Zotero `10.0.6`. The current XPI and the copy installed in Zotero 10.0.6 share SHA-256 `9648934bc1566ac7557bd6701ec54288c786a6ec02aa2752e749ecfc7db6922f`. A local Zotero 10.0.6 UI check showed Margin Notes 0.3.1 enabled, and page 7 of an actual PDF with existing native note annotations exposed two note cards through accessibility. Read the [compatibility notes](docs/compatibility.md) and [public 0.3.1 evidence](docs/evidence/compatibility-0.3.1.json) for the dependency audit, check inventory, and observed add-on state.
+
+Historical `0.3.0` evidence remains available in the [public 0.3.0 evidence snapshot](docs/evidence/compatibility-0.3.0.json).
 
 Historical `0.2.3` evidence remains available: it passed [218 native Zotero 9.0.6 runtime checks](https://github.com/junhwan26/zotero-margin-notes/actions/runs/37580613959) and 23 Node tests. The 2026-10-07 installed-add-on observation with Better BibTeX, Translate for Zotero, Ethereal Style, Research Vault Bridge, and disabled ZotMoov is a Zotero 9.0.6-era local observation, not a Zotero 10 integration certification.
 

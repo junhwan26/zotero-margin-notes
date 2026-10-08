@@ -91,6 +91,8 @@
     return /^#[0-9a-f]{6}$/i.test(value || '') ? value : '#e4bd5a';
   }
 
+  const COMMENT_ANNOTATION_TYPES = new Set(['highlight', 'underline', 'note']);
+
   function rectOf(node) {
     const r = node.getBoundingClientRect();
     return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
@@ -249,9 +251,10 @@
       if (card.rawComment !== annotation.comment) {
         card.rawComment = annotation.comment;
       }
-      if (card.rawQuote !== annotation.text) {
-        card.rawQuote = annotation.text;
-        card.quote.textContent = plainText(this.doc, annotation.text);
+      const quote = annotation.text || '';
+      if (card.rawQuote !== quote) {
+        card.rawQuote = quote;
+        card.quote.textContent = plainText(this.doc, quote);
         card.quote.hidden = !card.quote.textContent;
       }
       this.renderCardEditState(card, annotation);
@@ -404,7 +407,7 @@
         const annotations = [];
         for (const annotation of this.annotations || []) {
           const hasDraft = this.edits.has(annotation.id);
-          if (!['highlight', 'underline'].includes(annotation.type) || annotation._hidden ||
+          if (!COMMENT_ANNOTATION_TYPES.has(annotation.type) || annotation._hidden ||
             (!hasDraft && (!annotation.comment || !plainText(this.doc, annotation.comment)))) continue;
           const position = annotation.position;
           const rects = position?.pageIndex === index ? position.rects :

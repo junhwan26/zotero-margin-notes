@@ -91,17 +91,18 @@ async function runSmoke(timers) {
     // operations establish native behavior before the plugin touches this reader.
     plugin.stop();
     const attachment = await Zotero.Attachments.importFromFile({ file: PathUtils.join(directory, 'two-column.pdf'), libraryID: Zotero.Libraries.userLibraryID });
-    const createAnnotation = async (comment, x, y, pageIndex = 0) => {
+    const createAnnotation = async (comment, x, y, pageIndex = 0, type = 'highlight') => {
       const item = new Zotero.Item('annotation');
       item.libraryID = attachment.libraryID;
       item.parentID = attachment.id;
-      item.annotationType = 'highlight';
-      item.annotationText = 'Synthetic highlighted text';
+      item.annotationType = type;
+      item.annotationText = type === 'note' ? '' : 'Synthetic highlighted text';
       item.annotationComment = comment;
       item.annotationColor = x < 300 ? '#ffd400' : '#ff6666';
       item.annotationPageLabel = String(pageIndex + 1);
       item.annotationSortIndex = `${String(pageIndex).padStart(5, '0')}|${String(Math.round((792 - y) * 100)).padStart(6, '0')}|00000`;
-      item.annotationPosition = JSON.stringify({ pageIndex, rects: [[x, y, x + 190, y + 12]] });
+      item.annotationPosition = JSON.stringify({ pageIndex,
+        rects: [[x, y, x + (type === 'note' ? 22 : 190), y + (type === 'note' ? 22 : 12)]] });
       await item.saveTx();
       return item;
     };
@@ -234,10 +235,10 @@ async function runSmoke(timers) {
       const dark = Math.min(relativeLuminance(a), relativeLuminance(b));
       return (light + 0.05) / (dark + 0.05);
     };
-    const checkSelectionPalette = (label, element) => {
-      const original = overlay.layer.dataset.theme;
+    const checkSelectionPalette = (label, element, frame = overlay) => {
+      const original = frame.layer.dataset.theme;
       for (const theme of ['light', 'dark']) {
-        overlay.layer.dataset.theme = theme;
+        frame.layer.dataset.theme = theme;
         const style = pdfWindow.getComputedStyle(element, '::selection');
         const fg = parseColor(style.color);
         const bg = parseColor(style.backgroundColor);
@@ -245,12 +246,12 @@ async function runSmoke(timers) {
           fg.a >= 0.99 && bg.a >= 0.99 && contrast(fg, bg) >= 4.5,
           { color: fg.raw, backgroundColor: bg.raw, contrast: contrast(fg, bg) });
       }
-      overlay.layer.dataset.theme = original;
+      frame.layer.dataset.theme = original;
     };
-    const checkWhiteNoteSurface = (label, element) => {
-      const original = overlay.layer.dataset.theme;
+    const checkWhiteNoteSurface = (label, element, frame = overlay) => {
+      const original = frame.layer.dataset.theme;
       for (const theme of ['light', 'dark']) {
-        overlay.layer.dataset.theme = theme;
+        frame.layer.dataset.theme = theme;
         const style = pdfWindow.getComputedStyle(element);
         const fg = parseColor(style.color);
         const bg = parseColor(style.backgroundColor);
@@ -258,7 +259,7 @@ async function runSmoke(timers) {
           bg.a >= 0.99 && bg.r >= 250 && bg.g >= 250 && bg.b >= 250 && contrast(fg, bg) >= 4.5,
           { color: fg.raw, backgroundColor: bg.raw, contrast: contrast(fg, bg) });
       }
-      overlay.layer.dataset.theme = original;
+      frame.layer.dataset.theme = original;
     };
     const selectedDraft = editor => editor.selectionEnd > editor.selectionStart;
     const selectionRange = editor => ({
@@ -620,6 +621,182 @@ async function runSmoke(timers) {
         (currentAnnotation(draftID).comment || '') === commentBeforeReadingMode);
       await native.runSelection('native text selection after Reading Mode flag resume', 24);
     }
+
+    // Add sticky notes only after the original placement/congestion assertions.
+    // Page two has room for actual cards, so a missing note cannot pass by
+    // falling back to the overflow tray or merely existing in the library.
+    await mark('rendering and editing native sticky-note comments');
+    const sticky = await createAnnotation('STICKY NOTE: a native note needs a side memo.', 50, 600, 1, 'note');
+    const blankSticky = await createAnnotation('   \n  ', 50, 480, 1, 'note');
+    // navigate() initiates scrolling but does not await PDF.js layout. Finish
+    // the Fit scale change first, then navigate at that settled scale.
+    readerDoc.querySelector('.mn-fit').click();
+    await settle();
+    await reader.navigate({ pageIndex: 1 });
+    const stickyFrame = await waitFor('current PDF overlay for sticky notes', () => controller.frames.get(view));
+    const stickyCard = () => stickyFrame.layer.querySelector(`.mn-card[data-annotation-id="${sticky.key}"]`);
+    const stickyEditor = () => {
+      const node = stickyCard();
+      return node && !node.querySelector('.mn-editor').hidden && node.querySelector('textarea');
+    };
+    const waitForStickyPage = () => waitFor('sticky-note page and anchor inside the PDF viewport', () => {
+      const pageView = pdf.getPageView(1);
+      const pageDiv = doc.querySelector('.page[data-page-number="2"]');
+      const anchorRect = currentAnnotation(sticky.key)?.position?.rects?.[0];
+      if (!pageDiv || !pageView?.viewport || !anchorRect || view._scrolling) return false;
+      const point = pageView.viewport.convertToViewportPoint(
+        (anchorRect[0] + anchorRect[2]) / 2, (anchorRect[1] + anchorRect[3]) / 2);
+      const pageBox = rectangle(pageDiv);
+      const bounds = rectangle(stickyFrame.container);
+      const anchorY = pageBox.top + pageDiv.clientTop + point[1] * pageDiv.clientHeight / pageView.viewport.height;
+      return pdf.currentPageNumber === 2 && pageBox.top < bounds.bottom && pageBox.bottom > bounds.top &&
+        anchorY >= Math.max(0, bounds.top) && anchorY <= Math.min(pdfWindow.innerHeight, bounds.bottom);
+    });
+    const stickyDiagnostics = () => {
+      const describeAnnotation = annotation => annotation ? {
+        id: annotation.id, type: annotation.type, comment: annotation.comment,
+        text: annotation.text, hidden: annotation._hidden, position: annotation.position,
+      } : null;
+      const pageView = pdf.getPageView(1);
+      const pageDiv = doc.querySelector('.page[data-page-number="2"]');
+      const position = currentAnnotation(sticky.key)?.position;
+      const anchorRect = position?.rects?.[0];
+      const viewportPoint = anchorRect && pageView?.viewport?.convertToViewportPoint(
+        (anchorRect[0] + anchorRect[2]) / 2, (anchorRect[1] + anchorRect[3]) / 2);
+      return {
+        createdItem: { key: sticky.key, type: sticky.annotationType, position: JSON.parse(sticky.annotationPosition) },
+        nativeNote: describeAnnotation(currentAnnotation(sticky.key)),
+        overlayNote: describeAnnotation(stickyFrame.annotations?.find(annotation => annotation.id === sticky.key)),
+        viewport: { width: pdfWindow.innerWidth, height: pdfWindow.innerHeight,
+          scale: pdf.currentScale, currentPage: pdf.currentPageNumber },
+        page: pageDiv ? { ...rectangle(pageDiv), clientWidth: pageDiv.clientWidth,
+          clientHeight: pageDiv.clientHeight, viewport: { width: pageView?.viewport?.width,
+            height: pageView?.viewport?.height }, viewportPoint } : null,
+        container: { ...rectangle(stickyFrame.container), clientWidth: stickyFrame.container.clientWidth,
+          clientHeight: stickyFrame.container.clientHeight, scrollTop: stickyFrame.container.scrollTop },
+        overlay: { enabled: controller.enabled, destroyed: stickyFrame.destroyed,
+          hidden: stickyFrame.layer.hidden, show: stickyFrame.show,
+          noSpace: stickyFrame.noSpace, crowded: stickyFrame.crowded,
+          annotationCount: stickyFrame.annotations?.length,
+          cards: Array.from(stickyFrame.layer.querySelectorAll('.mn-card')).map(node => ({
+            id: node.dataset.annotationId, ...rectangle(node)
+          })) },
+      };
+    };
+    try {
+      await waitForStickyPage();
+      await waitFor('native sticky note comment appears as a visible side memo', () => {
+        const node = stickyCard();
+        const r = node?.getBoundingClientRect();
+        return r?.width > 0 && r.height > 0 && node.querySelector('.mn-comment')?.textContent.includes('STICKY NOTE:');
+      });
+    } catch (error) {
+      check('native sticky-note comments render as visible margin cards', false, stickyDiagnostics());
+      throw error;
+    }
+    check('native sticky-note comments render as visible margin cards', currentAnnotation(sticky.key)?.type === 'note');
+    checkWhiteNoteSurface('sticky-note card', stickyCard(), stickyFrame);
+    check('sticky-note cards omit an empty highlighted-text quote',
+      stickyCard().querySelector('.mn-quote').hidden && !stickyCard().querySelector('.mn-quote').textContent);
+    check('blank sticky-note comments are omitted',
+      !stickyFrame.layer.querySelector(`[data-annotation-id="${blankSticky.key}"]`));
+    const stickyFieldsBeforeSave = preservedFields(currentAnnotation(sticky.key));
+    await native.doubleClick(stickyCard().querySelector('.mn-comment'));
+    const firstStickyEditor = await waitFor('double-click opens the sticky-note margin editor', stickyEditor);
+    check('double-clicking a sticky-note comment opens its margin textarea',
+      firstStickyEditor.value === currentAnnotation(sticky.key).comment);
+    checkWhiteNoteSurface('sticky-note textarea', firstStickyEditor, stickyFrame);
+    checkSelectionPalette('sticky-note textarea', firstStickyEditor, stickyFrame);
+    const stickySavedValue = 'STICKY SAVED: a < b & c\n여백 메모와 기본 사이드바가 함께 갱신됩니다.';
+    firstStickyEditor.value = stickySavedValue;
+    firstStickyEditor.dispatchEvent(new pdfWindow.Event('input', { bubbles: true }));
+    stickyCard().querySelector('.mn-save').click();
+    await waitFor('sticky-note Save reaches native reader state', () => currentAnnotation(sticky.key)?.comment === stickySavedValue);
+    await waitForPersistedComment(sticky, stickySavedValue);
+    check('sticky-note Save preserves literal plain text in native state, SQLite, and item cache',
+      Zotero.Items.get(sticky.id).annotationComment === stickySavedValue);
+    check('sticky-note Save preserves note type, anchor geometry, color, and tags',
+      preservedFields(currentAnnotation(sticky.key)) === stickyFieldsBeforeSave);
+    internal.toggleSidebar(true);
+    internal.setSidebarView('annotations');
+    internal.setSelectedAnnotations(Cu.cloneInto([sticky.key], reader._iframeWindow));
+    const stickySidebar = await waitFor('native sidebar reflects saved sticky note', () => {
+      const node = readerDoc.querySelector(`[data-sidebar-annotation-id="${sticky.key}"] .comment .content`);
+      return node?.textContent.includes('STICKY SAVED: a < b & c') && node;
+    });
+    check('sticky-note margin Save updates Zotero native sidebar text',
+      stickySidebar.textContent.includes('여백 메모와 기본 사이드바가 함께 갱신됩니다.'));
+    stickySidebar.closest('.comment').dispatchEvent(new readerWindow.MouseEvent('click', {
+      bubbles: true, cancelable: true, view: readerWindow
+    }));
+    await waitFor('native sticky-note sidebar comment is editable', () => stickySidebar.isContentEditable);
+    stickySidebar.focus();
+    const stickySidebarRange = readerDoc.createRange();
+    stickySidebarRange.selectNodeContents(stickySidebar);
+    const stickySidebarSelection = readerWindow.getSelection();
+    stickySidebarSelection.removeAllRanges();
+    stickySidebarSelection.addRange(stickySidebarRange);
+    const stickySidebarValue = 'STICKY SIDEBAR SAVED: synchronized back to the side memo.';
+    readerDoc.execCommand('insertText', false, stickySidebarValue);
+    stickySidebar.dispatchEvent(new readerWindow.InputEvent('input', { bubbles: true,
+      inputType: 'insertText', data: stickySidebarValue }));
+    await waitFor('sticky-note sidebar edit reaches native state', () => currentAnnotation(sticky.key)?.comment === stickySidebarValue);
+    await waitForPersistedComment(sticky, stickySidebarValue);
+    internal.toggleSidebar(false);
+    readerDoc.querySelector('.mn-fit').click();
+    await settle();
+    await reader.navigate({ pageIndex: 1 });
+    await waitForStickyPage();
+    await waitFor('sticky-note sidebar edit reaches the margin card', () =>
+      stickyCard()?.querySelector('.mn-comment')?.textContent === stickySidebarValue);
+    check('sticky-note sidebar edits synchronize to margin cards, SQLite, and item cache',
+      Zotero.Items.get(sticky.id).annotationComment === stickySidebarValue);
+    await native.doubleClick(stickyCard().querySelector('.mn-comment'));
+    const cancelStickyEditor = await waitFor('sticky-note editor before Cancel', stickyEditor);
+    cancelStickyEditor.value = 'CANCELLED STICKY DRAFT: must not reach the database';
+    cancelStickyEditor.dispatchEvent(new pdfWindow.Event('input', { bubbles: true }));
+    stickyCard().querySelector('.mn-cancel').click();
+    await settle();
+    check('sticky-note Cancel preserves the native comment and item cache',
+      currentAnnotation(sticky.key).comment === stickySidebarValue &&
+      Zotero.Items.get(sticky.id).annotationComment === stickySidebarValue);
+    check('sticky-note Cancel preserves the persisted SQLite comment',
+      await Zotero.DB.valueQueryAsync('SELECT comment FROM itemAnnotations WHERE itemID = ?', [sticky.id]) === stickySidebarValue);
+    const hiddenSticky = JSON.parse(JSON.stringify(currentAnnotation(sticky.key)));
+    hiddenSticky._hidden = true;
+    internal.setAnnotations(Cu.cloneInto([hiddenSticky], reader._iframeWindow));
+    await waitFor('hidden native sticky note omitted from side memos', () =>
+      !stickyFrame.layer.querySelector(`[data-annotation-id="${sticky.key}"]`));
+    check('hidden sticky-note annotations are excluded from margin cards and overflow rows', true);
+    hiddenSticky._hidden = false;
+    internal.setAnnotations(Cu.cloneInto([hiddenSticky], reader._iframeWindow));
+    await waitFor('unhidden native sticky-note card restored', stickyCard);
+    check('unhiding a sticky note restores its current saved side memo',
+      stickyCard().querySelector('.mn-comment').textContent === stickySidebarValue);
+    // Probe unsupported types in the overlay only. Do not send invalid image,
+    // ink, or text geometry to Zotero's native annotation manager.
+    const originalFrameAnnotations = stickyFrame.annotations;
+    try {
+      // The original array belongs to the content reader compartment. Build
+      // the probe in this scope, then clone it back rather than letting a
+      // content Array.concat inspect privileged argument-array symbols.
+      const unsupportedAnnotations = JSON.parse(JSON.stringify(originalFrameAnnotations));
+      for (const type of ['image', 'ink', 'text']) {
+        unsupportedAnnotations.push({ ...hiddenSticky, id: `unsupported-${type}`, type, _hidden: false,
+          comment: `UNSUPPORTED ${type}: must not become a margin memo` });
+      }
+      stickyFrame.annotations = Cu.cloneInto(unsupportedAnnotations, reader._iframeWindow);
+      stickyFrame.render();
+      for (const type of ['image', 'ink', 'text']) {
+        check(`unsupported ${type} annotations remain excluded from margin notes`,
+          !stickyFrame.layer.querySelector(`[data-annotation-id="unsupported-${type}"]`));
+      }
+    } finally {
+      stickyFrame.annotations = originalFrameAnnotations;
+      stickyFrame.render();
+    }
+    await reader.navigate({ pageIndex: 0 });
+    await native.runSelection('native text selection after sticky-note editing', 26);
     smokeProduction.shutdown();
     await settle();
     check('shutdown removes card overlays', !doc.querySelector('.mn-layer'));
@@ -635,6 +812,8 @@ async function runSmoke(timers) {
     const restored = await waitFor('reopened annotation state', () => reopened._internalReader?._state.annotations.find(a => a.id === left.key));
     check('comment edits survive closing and reopening the PDF', restored.comment === finalComment);
     check('rich formatting survives closing and reopening the PDF', reopened._internalReader._state.annotations.find(a => a.id === lowerRight.key)?.comment === richComment);
+    check('sticky-note edits survive closing and reopening the PDF',
+      reopened._internalReader._state.annotations.find(a => a.id === sticky.key)?.comment === stickySidebarValue);
     report.passed = true;
   } catch (error) {
     report.error = String(error);
