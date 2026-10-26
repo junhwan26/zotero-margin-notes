@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1 - 2026-10-26
+
+- Use the full available outer margin for note cards while keeping the text size unchanged, so wider windows fit more words per line.
+- Measure each card at the actual left and right margin widths before placement, preserving safe spacing on pages with unequal margins.
+- Preserve editor focus, selected editor text, and unsaved drafts while responsive widths change.
+- Add responsive-width and per-side height regression coverage alongside the existing Markdown and native Zotero reader tests.
+
 ## 0.4.0 - 2026-10-26
 
 - Render Markdown in margin notes and the overflow list: headings, emphasis, lists, quotes, code, and links.

@@ -494,17 +494,23 @@
         const input = { page: box, bounds,
           obstacles: pages.filter(p => p !== page).map(p => p.box).concat(occupied), notes: [] };
         const space = root.MarginNotesLayout.layoutPage(input);
-        const widths = Object.values(space.lanes).filter(Boolean).map(lane => lane.width);
-        if (!widths.length) { noSpace += annotations.length; continue; }
-        const measureWidth = Math.min(...widths);
+        if (!Object.values(space.lanes).some(Boolean)) { noSpace += annotations.length; continue; }
         for (const { annotation, anchor } of annotations) {
           const card = this.makeCard(annotation, index);
           card.hidden = false;
-          card.style.width = `${measureWidth}px`;
           card.style.height = '';
           card.open.textContent = this.owner.i18n.t('openLabel', { page: annotation.pageLabel || index + 1 });
-          const height = Math.ceil(card.getBoundingClientRect().height);
-          input.notes.push({ id: annotation.id, anchorX: anchor.x, anchorY: anchor.y, height });
+          const heights = {};
+          const measured = new Map();
+          for (const [side, lane] of Object.entries(space.lanes)) {
+            if (!lane) continue;
+            if (!measured.has(lane.width)) {
+              card.style.width = `${lane.width}px`;
+              measured.set(lane.width, Math.ceil(card.getBoundingClientRect().height));
+            }
+            heights[side] = measured.get(lane.width);
+          }
+          input.notes.push({ id: annotation.id, anchorX: anchor.x, anchorY: anchor.y, heights });
         }
         const result = root.MarginNotesLayout.layoutPage(input);
         for (const p of result.placements) {

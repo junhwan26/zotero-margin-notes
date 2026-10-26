@@ -181,6 +181,63 @@ test("layout is deterministic and does not mutate frozen inputs", () => {
   assert.equal(JSON.stringify(input), before);
 });
 
+test("notes use the full available margin as it grows without a fixed width cap", () => {
+  const narrow = { page, bounds, notes: [note("left", 300, 170), note("right", 820, 300)] };
+  const wide = { ...narrow, bounds: { ...bounds, left: -200, right: 1520 } };
+  const before = layoutPage(narrow);
+  const after = layoutPage(wide);
+  verify(before, narrow);
+  verify(after, wide);
+  for (const side of ["left", "right"]) {
+    const a = before.placements.find(p => p.side === side);
+    const b = after.placements.find(p => p.side === side);
+    assert.equal(a.width, 240);
+    assert.equal(b.width, side === "left" ? 440 : 640);
+    assert.equal(b.height, a.height);
+  }
+});
+
+test("an explicit maximum width still caps both margins", () => {
+  const input = { page, bounds, maxWidth: 180,
+    notes: [note("left", 300, 170), note("right", 820, 300)] };
+  const result = layoutPage(input);
+  verify(result, input);
+  assert.deepEqual(result.placements.map(p => p.width), [180, 180]);
+});
+
+test("asymmetric margins pack notes with the height measured for their chosen side", () => {
+  const input = { page, bounds: { ...bounds, right: 1500 }, notes: [
+    { ...note("left", 280, 170), heights: { left: 150, right: 60 } },
+    { ...note("right", 840, 300), heights: { left: 140, right: 50 } },
+  ] };
+  const result = layoutPage(input);
+  verify(result, input);
+  assert.deepEqual(result.placements.map(p => [p.side, p.width, p.height]),
+    [["left", 240, 150], ["right", 620, 50]]);
+});
+
+test("a shorter wide-side height lets a tall note fit without covering the PDF", () => {
+  const input = { page: { ...page, top: 20, bottom: 220 }, bounds, notes: [
+    { id: "wide-only", anchorX: 300, anchorY: 170, heights: { left: 250, right: 80 } },
+    { id: "second", anchorX: 820, anchorY: 170, heights: { left: 250, right: 70 } },
+  ] };
+  const result = layoutPage(input);
+  verify(result, input);
+  assert.equal(result.hidden.length, 0);
+  assert.deepEqual(result.placements.map(p => [p.side, p.height]), [["right", 80], ["right", 70]]);
+});
+
+test("invalid side heights cannot produce invalid geometry and retain scalar fallback", () => {
+  const input = { page, bounds, notes: [
+    { ...note("fallback", 300, 170), heights: { left: NaN, right: undefined } },
+    { ...note("invalid", 820, 300), heights: { left: -1, right: Infinity } },
+  ] };
+  const result = layoutPage(input);
+  verify(result, input);
+  assert.deepEqual(result.placements.map(p => [p.id, p.side, p.height]), [["fallback", "right", 80]]);
+  assert.deepEqual(result.hidden, ["invalid"]);
+});
+
 test("seeded random layouts preserve visibility, geometry and collision invariants", () => {
   let seed = 429;
   function random() {

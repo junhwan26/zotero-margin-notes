@@ -114,18 +114,20 @@
       if (!note.valid) continue;
       let best = null;
       for (const side of SIDES) {
-        if (!lanes[side]) continue;
-        const candidate = pack(groups[side].concat(note), lanes[side], gap);
+        const height = note.heights[side];
+        if (!lanes[side] || !finite(height) || height <= 0) continue;
+        const sideNote = { ...note, height };
+        const candidate = pack(groups[side].concat(sideNote), lanes[side], gap);
         if (!candidate) continue;
         const anchorX = clamp(note.anchorX, page.left, page.right);
         const distance = side === "left" ? anchorX - page.left : page.right - anchorX;
         const score = distance
           + 1.5 * (candidate.displacement - packed[side].displacement)
           + 0.2 * candidate.usedHeight;
-        if (!best || score < best.score - EPSILON) best = { side, score, candidate };
+        if (!best || score < best.score - EPSILON) best = { side, score, candidate, note: sideNote };
       }
       if (best) {
-        groups[best.side].push(note);
+        groups[best.side].push(best.note);
         packed[best.side] = best.candidate;
       }
     }
@@ -155,17 +157,23 @@
     if (!rectangle(options.page) || !rectangle(options.bounds)) return empty;
 
     const minWidth = option(options.minWidth, 144, 1);
-    const maxWidth = Math.max(minWidth, option(options.maxWidth, 216, 1));
+    const maxWidth = Math.max(minWidth,
+      option(options.maxWidth, options.bounds.right - options.bounds.left, 1));
     const gap = option(options.gap, 12, 0);
     const padding = option(options.padding, 8, 0);
     const page = options.page;
-    const notes = original.map((note, index) => ({
-      id: note && note.id, index,
-      anchorX: note && note.anchorX, anchorY: note && note.anchorY,
-      height: note && note.height,
-      valid: !!note && finite(note.anchorX) && finite(note.anchorY)
-        && finite(note.height) && note.height > 0,
-    })).sort((a, b) => a.valid && b.valid ? compareNotes(a, b) : Number(b.valid) - Number(a.valid));
+    const notes = original.map((note, index) => {
+      // A wide margin can wrap the same comment into fewer lines than a narrow
+      // one. Pack each candidate using the height measured at that lane's width.
+      const heights = {};
+      for (const side of SIDES) heights[side] = note?.heights?.[side] ?? note?.height;
+      return {
+        id: note && note.id, index,
+        anchorX: note && note.anchorX, anchorY: note && note.anchorY, heights,
+        valid: !!note && finite(note.anchorX) && finite(note.anchorY)
+          && SIDES.some(side => finite(heights[side]) && heights[side] > 0),
+      };
+    }).sort((a, b) => a.valid && b.valid ? compareNotes(a, b) : Number(b.valid) - Number(a.valid));
     const lanes = makeLanes(page, options.bounds,
       Array.isArray(options.obstacles) ? options.obstacles : [], minWidth, maxWidth, gap, padding);
     let result = distribute(notes, lanes, page, gap);

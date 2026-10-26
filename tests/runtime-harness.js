@@ -590,6 +590,105 @@ async function runSmoke(timers) {
     const finalComment = currentAnnotation(left.key).comment;
     await waitForPersistedComment(left, finalComment);
 
+    await mark('checking responsive margin text wrapping');
+    const responsiveSource = 'Responsive notes use the available margin to show more words on each line. The text stays the same size while a wider note needs fewer lines to read.';
+    const responsiveOriginal = currentAnnotation(lowerLeft.key).comment;
+    const responsiveFields = preservedFields(currentAnnotation(lowerLeft.key));
+    const responsiveScale = pdf.currentScaleValue;
+    const responsivePage = pdf.currentPageNumber - 1;
+    const resizeMargin = async width => {
+      const pageDiv = pdf.getPageView(0).div;
+      const bounds = rectangle(overlay.container);
+      const available = Math.min(pdfWindow.innerWidth, bounds.left + overlay.container.clientWidth) - Math.max(0, bounds.left);
+      // Derive zoom from real geometry: 12px page gap + 8px viewport padding.
+      // Native window resizing is constrained differently across platforms.
+      const pageWidth = available - 2 * (width + 20);
+      check('responsive test has enough room for a PDF and both margin lanes', pageWidth > 220,
+        { available, targetMargin: width, pageWidth });
+      pdf.currentScaleValue = String(pdf.currentScale * pageWidth / rectangle(pageDiv).width);
+      await settle();
+      if (!visibleInput(lowerLeft.key)) {
+        await reader.navigate({ pageIndex: 0 });
+        await settle();
+      }
+      await waitFor('responsive margin card at the requested PDF zoom', () => {
+        const node = card(lowerLeft.key);
+        return node?.querySelector('.mn-comment p')?.textContent === responsiveSource &&
+          rectangle(node).width >= width - 5 && rectangle(node).width <= width + 5;
+      });
+    };
+    const measureResponsiveComment = () => {
+      const node = card(lowerLeft.key);
+      const body = node.querySelector('.mn-comment');
+      const paragraph = body.querySelector('p');
+      const range = doc.createRange();
+      range.selectNodeContents(paragraph);
+      // A block's rect is its box; a text range exposes the actual wrapped lines.
+      const lineTops = [];
+      for (const rect of range.getClientRects()) {
+        if (rect.width > 0 && rect.height > 0 && !lineTops.some(top => Math.abs(top - rect.top) < 1)) lineTops.push(rect.top);
+      }
+      const style = pdfWindow.getComputedStyle(paragraph);
+      return { card: rectangle(node), body: rectangle(body), paragraph: rectangle(paragraph),
+        lines: lineTops.length, text: paragraph.textContent,
+        font: { size: style.fontSize, lineHeight: style.lineHeight, family: style.fontFamily } };
+    };
+    try {
+      internal._annotationManager.updateAnnotations(Cu.cloneInto([{ id: lowerLeft.key, comment: responsiveSource }], reader._iframeWindow));
+      await waitForPersistedComment(lowerLeft, responsiveSource);
+      await resizeMargin(180);
+      const narrowText = measureResponsiveComment();
+      await snapshot('responsive text in a narrow margin', true);
+      await resizeMargin(340);
+      const wideText = measureResponsiveComment();
+      await snapshot('responsive text in a wide margin', true);
+      const responsiveEvidence = { narrow: narrowText, wide: wideText };
+      check('wider margins widen both the note and its rendered paragraph',
+        wideText.card.width > narrowText.card.width + 80 &&
+        wideText.body.width > narrowText.body.width + 80 &&
+        wideText.paragraph.width > narrowText.paragraph.width + 80, responsiveEvidence);
+      check('wider margin text keeps the same computed font size and line height',
+        JSON.stringify(wideText.font) === JSON.stringify(narrowText.font), responsiveEvidence);
+      check('wider margins display more comment text per rendered line',
+        narrowText.lines > wideText.lines && wideText.lines > 0 &&
+        narrowText.text === responsiveSource && wideText.text === responsiveSource, responsiveEvidence);
+      check('wider margins contract the paragraph and card heights after rewrapping',
+        wideText.paragraph.height < narrowText.paragraph.height - 1 &&
+        wideText.card.height < narrowText.card.height - 1, responsiveEvidence);
+      check('responsive wrapping preserves the raw annotation and highlight fields',
+        currentAnnotation(lowerLeft.key).comment === responsiveSource &&
+        preservedFields(currentAnnotation(lowerLeft.key)) === responsiveFields);
+
+      await resizeMargin(180);
+      const responsiveEditor = await beginEdit(lowerLeft.key);
+      const responsiveDraft = 'UNSAVED responsive draft: retain this selected text while the margin grows.';
+      typeDraft(lowerLeft.key, responsiveDraft).focus();
+      responsiveEditor.setSelectionRange(18, 45);
+      const responsiveSelection = selectionRange(responsiveEditor);
+      const responsiveEditorFont = pdfWindow.getComputedStyle(responsiveEditor).fontSize;
+      const responsiveEditorWidth = rectangle(responsiveEditor).width;
+      await resizeMargin(340);
+      const resizedEditor = visibleInput(lowerLeft.key);
+      check('margin resizing preserves the unsaved editor draft and exact selected text',
+        !!resizedEditor && resizedEditor.value === responsiveDraft &&
+        JSON.stringify(selectionRange(resizedEditor)) === JSON.stringify(responsiveSelection) &&
+        pdfWindow.document.activeElement?.isSameNode(resizedEditor),
+        { before: responsiveSelection, after: resizedEditor && selectionRange(resizedEditor) });
+      check('the editor uses a wider margin without changing its font size',
+        rectangle(resizedEditor).width > responsiveEditorWidth + 80 &&
+        pdfWindow.getComputedStyle(resizedEditor).fontSize === responsiveEditorFont);
+      clickAction(lowerLeft.key, 'cancel');
+      await waitForPersistedComment(lowerLeft, responsiveSource);
+    } finally {
+      if (visibleInput(lowerLeft.key)) clickAction(lowerLeft.key, 'cancel');
+      internal._annotationManager.updateAnnotations(Cu.cloneInto([{ id: lowerLeft.key, comment: responsiveOriginal }], reader._iframeWindow));
+      pdf.currentScaleValue = responsiveScale;
+      await settle();
+      await reader.navigate({ pageIndex: responsivePage });
+      await settle();
+      await waitForPersistedComment(lowerLeft, responsiveOriginal);
+    }
+
     await mark('zooming and rotating');
     pdf.currentScaleValue = '1.15';
     await snapshot('zoom 115%');

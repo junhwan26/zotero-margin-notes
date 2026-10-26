@@ -28,12 +28,13 @@
 | Margin note cards | Shows comments from highlights, underlines, and note annotations as white cards outside the page. |
 | Markdown comments | Formats headings, emphasis, lists, tables, code, and links in margin cards and overflow comments while keeping the original Markdown editable. |
 | Two-column placement | Chooses the left or right outer margin from annotation coordinates, available room, and nearby card congestion. |
+| Responsive card width | Uses the available outer margin at the same text size, fitting more words per line as the window grows. |
 | Zotero 10 Reading Mode safety | Suspends margin notes per reader pane while Zotero Reading Mode is active, then resumes when the pane returns to PDF view. |
 | Zotero workflow preservation | Keeps text selection, selection popups, annotation tools, keyboard selection, search, zoom, page navigation, deletion, undo/redo, and sidebar edits working. |
 
 ## Quick Start
 
-1. Download `zotero-margin-notes-0.4.0.xpi` from the [latest release](https://github.com/junhwan26/zotero-margin-notes/releases/latest).
+1. Download `zotero-margin-notes-0.4.1.xpi` from the [latest release](https://github.com/junhwan26/zotero-margin-notes/releases/latest).
 2. In Zotero, open **Tools -> Plugins**.
 3. Open the gear menu, choose **Install Plugin From File...**, and select the XPI.
 4. Open a PDF, add a comment to a highlight, underline, or note annotation, then use **Margin Notes** in the reader toolbar.
@@ -60,6 +61,8 @@ Saving an empty comment removes that card from the margin view because the plugi
 
 White notes and editors remain readable in both PDF themes. Comments are saved in Zotero annotations. English is the default interface language; Korean Zotero locales select Korean automatically.
 
+Cards expand into the available outer margin without enlarging the text. Each side is measured at its actual width, so wider notes fit more words per line while placement keeps clear of the PDF and neighboring cards. Resizing preserves unsaved editor drafts, focus, and selected editor text.
+
 ## Markdown Comments
 
 Write Markdown in an annotation comment to see it formatted in the margin card and overflow list:
@@ -82,7 +85,9 @@ Task markers, blockquotes, and tables are also supported. Links with safe URLs o
 
 Margin Notes has no required third-party Zotero add-on and no npm runtime package dependency. It targets Zotero `9.0` through `10.0.*`, with native validation on Zotero `9.0.6` and `10.0.6`. The plugin is PDF-only; EPUB and web snapshots are ignored.
 
-The `0.4.0` build passed **44/44 Node tests**, **271/271 isolated Zotero 9.0.6 checks**, **288/288 isolated Zotero 10.0.6 checks**, syntax checks, diff checks, and the XPI build on macOS on 2026-10-26. The native runs cover Markdown display/raw editing, sidebar synchronization, inert HTML/images/unsafe links, mixed native-rich/code comments, and the existing reader behavior suite. See the [0.4.0 public evidence](docs/evidence/compatibility-0.4.0.json) and [compatibility notes](docs/compatibility.md). Third-party add-on observations below remain historical and were not retested for 0.4.0.
+The `0.4.1` build passed **49/49 Node tests**, **292/292 isolated Zotero 9.0.6 checks**, and **309/309 isolated Zotero 10.0.6 checks** on macOS on 2026-10-26. The runs cover responsive wrapping at unchanged text size, placement safety, editor draft/focus/selection preservation, and the existing reader suite. See the [0.4.1 public evidence](docs/evidence/compatibility-0.4.1.json) and [compatibility notes](docs/compatibility.md).
+
+Historical `0.4.0` validation passed **44/44 Node tests**, **271/271 isolated Zotero 9.0.6 checks**, **288/288 isolated Zotero 10.0.6 checks**, syntax checks, diff checks, and the XPI build on macOS on 2026-10-26. Those runs covered Markdown display/raw editing, sidebar synchronization, inert HTML/images/unsafe links, mixed native-rich/code comments, and the existing reader behavior suite. The [0.4.0 public evidence](docs/evidence/compatibility-0.4.0.json) remains available. Named third-party add-on observations below remain historical.
 
 The `0.3.1` release expands the display scope from highlights and underlines to Zotero note annotations. Note annotations do not have a selected-text quote, so their margin cards hide the quote area and show the annotation comment.
 

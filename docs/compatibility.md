@@ -2,13 +2,26 @@
 
 [한국어](compatibility.ko.md)
 
-**Checked on 2026-10-26 · Margin Notes 0.4.0 · Zotero 9.0.6 / 10.0.6 matrix · macOS**
+**Checked on 2026-10-26 · Margin Notes 0.4.1 · Zotero 9.0.6 / 10.0.6 matrix · macOS**
 
 Margin Notes declares support for Zotero 9.0 through 10.0.*. It does **not** require another Zotero add-on or an npm runtime package. The release XPI includes its implementation, and comments are stored in Zotero annotations.
 
-This report records dependency inspection and completed 0.4.0 validation in isolated macOS profiles. Earlier installed-add-on observations are retained in clearly dated historical sections. An add-on being enabled alongside Margin Notes does not establish that all of its workflows have been tested.
+This report records dependency inspection and 0.4.1 validation in isolated macOS profiles. Earlier validation and installed-add-on observations are retained in clearly dated historical sections. An add-on being enabled alongside Margin Notes does not establish that all of its workflows have been tested.
 
-## Completed 0.4.0 checks
+## 0.4.1 responsive-width checks
+
+Margin Notes 0.4.1 uses the full available outer margin without increasing text size, fitting more words per line as space grows. Each annotation is measured at the actual left and right widths before placement, so unequal margins use the correct card heights. Responsive layout retains editor focus, selected editor text, and unsaved drafts. No dependency was added.
+
+| Check | 0.4.1 result | Scope |
+| --- | --- | --- |
+| Node test suite | **49 / 49 passed** | Existing Markdown, layout, lifecycle, and localization tests plus responsive-width and per-side height placement regressions. |
+| Native Zotero 9.0.6 regression suite | **292 / 292 passed** | Final isolated macOS runtime, including responsive wrapping, unchanged font size, placement safety, and editor draft/focus/selection preservation. |
+| Native Zotero 10.0.6 regression suite | **309 / 309 passed** | The same coverage with 17 additional controlled Reading Mode assertions. |
+| Release artifact | **SHA-256 recorded** | `zotero-margin-notes-0.4.1.xpi`: `6183a1aefafc68766516b49b361d6af4136a37304497c699dd7dcf61fc726ec5`. |
+
+Both Zotero versions rewrapped the same synthetic paragraph from six lines in a 180px card to three lines in a 340px card, with the font unchanged at 13px. The [public 0.4.1 evidence](evidence/compatibility-0.4.1.json) records exact native check names/results and the artifact hash without private paths, fixture text, or runtime logs. These isolated runs do not certify third-party add-on combinations or the user's installed UI.
+
+## Historical 0.4.0 checks — 2026-10-26
 
 Margin Notes 0.4.0 renders Markdown in margin cards and overflow comments while keeping the saved annotation comment unchanged. Supported syntax includes headings, emphasis, lists, task markers, blockquotes, tables, code, and links. Double-click editing exposes the raw Markdown; Save/Cancel, native sidebar synchronization, and reopen persistence remain covered.
 
@@ -78,7 +91,7 @@ The native suite covers text-selection popups, highlighting, underlining, native
 
 ## Historical observations alongside other add-ons
 
-The local installed-add-on registry showed these versions on 2026-10-08 in the actual Zotero 10.0.6 UI with Margin Notes 0.3.1 active. These are **historical installed-state observations**, not complete integration-test results; these combinations were not retested for 0.4.0.
+The local installed-add-on registry showed these versions on 2026-10-08 in the actual Zotero 10.0.6 UI with Margin Notes 0.3.1 active. These are **historical installed-state observations**, not complete integration-test results; these combinations were not retested for 0.4.0 or 0.4.1.
 
 | Add-on | Observed version | Observation | Required by Margin Notes? |
 | --- | --- | --- | --- |
@@ -98,7 +111,7 @@ Historical Zotero 9.0.6 observation from 2026-10-07: Better BibTeX 9.0.70, Trans
 - PDF reader only. EPUB and web snapshots are ignored.
 - Local native validation used macOS. Windows and Linux have not been included in these runs.
 - Zotero 10 Reading Mode keeps the PDF iframe alive underneath the reading view. Margin Notes suspends that pane so cards do not cover Reading Mode and Fit Notes cannot zoom a hidden PDF pane. The automated regression covers that behavior through the real PDF reader's Reading Mode state and iframe visibility, not through the full separate Reading Mode UI.
-- The historical 0.3.1 installed PDF note-card presence was checked through macOS accessibility state because the screenshot tool was unavailable; no screenshot or pixel-level visual certification was made. The 0.4.0 runtime results above do not establish a screenshot review of the user's installed Markdown UI.
+- The historical 0.3.1 installed PDF note-card presence was checked through macOS accessibility state because the screenshot tool was unavailable; no screenshot or pixel-level visual certification was made. Isolated runtime results do not establish installation or a screenshot review of the user's current UI.
 - The overlay uses internal PDF-reader annotation and viewport APIs and temporarily extends the reader's text-focus guard. Other add-ons that replace those same internals or alter PDF-reader styling need combination testing. Wrapper-chain combinations with named add-ons have not been automated.
 
 If you encounter an interaction problem, [open an issue](https://github.com/junhwan26/zotero-margin-notes/issues/new) with the Zotero version, Margin Notes version, other add-on names and versions, whether Reading Mode was active, and the steps that reproduce it. Include whether the behavior also occurs when Margin Notes is disabled.
