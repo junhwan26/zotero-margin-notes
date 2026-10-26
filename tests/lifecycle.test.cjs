@@ -24,6 +24,7 @@ function runtime(enabled = true) {
   };
   vm.createContext(sandbox);
   vm.runInContext(fs.readFileSync(path.join(root, 'src/i18n.js'), 'utf8'), sandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'src/markdown.js'), 'utf8'), sandbox);
   vm.runInContext(fs.readFileSync(path.join(root, 'src/overlay.js'), 'utf8'), sandbox);
   return { plugin: sandbox.MarginNotes, sandbox, listeners, intervals, prefs };
 }

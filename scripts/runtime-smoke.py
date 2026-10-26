@@ -56,7 +56,7 @@ def main():
     args = parser.parse_args()
     if not Path(args.app).is_file():
         parser.error(f'Zotero executable not found: {args.app}')
-    for name in ('bootstrap.js', 'src/i18n.js', 'src/layout.js', 'src/overlay.js', 'tests/runtime-harness.js', 'tests/native-regression.js'):
+    for name in ('bootstrap.js', 'src/i18n.js', 'src/layout.js', 'src/markdown.js', 'src/overlay.js', 'tests/runtime-harness.js', 'tests/native-regression.js'):
         if not (ROOT / name).is_file():
             parser.error(f'Required build input is missing: {name}')
     temp = Path(tempfile.mkdtemp(prefix='zotero-margin-smoke-'))
@@ -104,6 +104,7 @@ def main():
         archive.write(ROOT / 'bootstrap.js', 'production/bootstrap.js')
         archive.write(ROOT / 'src/i18n.js', 'production/src/i18n.js')
         archive.write(ROOT / 'src/layout.js', 'production/src/layout.js')
+        archive.write(ROOT / 'src/markdown.js', 'production/src/markdown.js')
         archive.write(ROOT / 'src/overlay.js', 'production/src/overlay.js')
     command = [args.app, '-no-remote', '-profile', str(profile), '-ZoteroDebugText']
     if not args.visible:

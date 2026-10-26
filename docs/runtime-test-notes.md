@@ -13,6 +13,7 @@ The JSON evidence is written to `dist/runtime-smoke-report.json`. Each geometry 
 - Production bootstrap loading and toolbar mounting.
 - Left/right placement on a real two-column PDF, non-overlap, and blank comments.
 - Comments from highlights, underlines, and native note annotations, including hidden quote areas for note annotations that do not have selected text.
+- Markdown semantic display, raw-source double-click editing, native sidebar synchronization, Save/Cancel and reopen persistence, code containing literal HTML even when mixed with native rich text, inert images/HTML/unsafe links, and safe external-link dispatch without PDF navigation.
 - A persisted Zotero comment edit appearing in its margin card, native sidebar text, Zotero item cache, and SQLite annotation row.
 - Double-click margin card and overflow editing, Save/Cancel behavior, empty-comment removal, external conflict handling, read-only handling, rich-comment delegation, native undo/redo, and reopen persistence.
 - Readable selected text in note comments and editors in light/dark themes, keyboard selection, and preservation of existing drafts when double-clicking inside an active editor.
@@ -31,7 +32,7 @@ Zotero 9.0.6 and 10.0.6 both require valid extension metadata, including `applic
 
 ## Zotero 10 Reading Mode coverage
 
-Zotero 10 keeps the PDF iframe alive underneath Reading Mode. Margin Notes 0.3.1 treats each PDF pane independently: if a pane is in Reading Mode, that pane's margin notes are suspended; if another pane remains in PDF view, its margin notes can stay active. Fit Notes also skips hidden PDF panes so it cannot zoom a PDF view that the user is not seeing.
+Zotero 10 keeps the PDF iframe alive underneath Reading Mode. Margin Notes treats each PDF pane independently: if a pane is in Reading Mode, that pane's margin notes are suspended; if another pane remains in PDF view, its margin notes can stay active. Fit Notes also skips hidden PDF panes so it cannot zoom a PDF view that the user is not seeing.
 
 The automated regression drives Zotero's PDF-reader Reading Mode state and iframe visibility inside the real reader process. This covers the plugin logic that decides whether to render notes, resize the visible PDF pane, and restore notes when the pane exits Reading Mode. It is **not** a full end-to-end exercise of Zotero's separate Reading Mode UI controls.
 
@@ -43,7 +44,7 @@ The fix exports the guard through Zotero's function bridge and avoids passing th
 
 ## CI Zotero app source
 
-The GitHub Actions runtime job downloads Zotero for macOS from Zotero's official release host. The 0.3.1 matrix covers:
+The GitHub Actions runtime job downloads Zotero for macOS from Zotero's official release host. The matrix covers:
 
 ```text
 https://download.zotero.org/client/release/9.0.6/Zotero-9.0.6.dmg
@@ -57,7 +58,15 @@ Before mounting each DMG, CI verifies these SHA-256 hashes from the workflow mat
 b8e43f4a13cc6bbd1a979380bededd7eb44e7611ea2501f8d1f0293fbc94731c
 ```
 
-## 0.3.1 note annotation coverage
+## 0.4.0 Markdown coverage
+
+Margin Notes 0.4.0 displays headings, emphasis, lists, task markers, blockquotes, tables, code, and safe links in both margin cards and overflow comments. The 18 Markdown unit tests cover parser output, safe URL protocols, inert HTML and images, literal code, legacy Zotero rich tags, bounded input handling, and script-loader scope. Together with existing tests, the Node suite contains 44 passing tests.
+
+Native runtime coverage verifies formatted display, exact raw-source double-click editing, Save/Cancel, selection retention across unchanged rerenders, native sidebar/cache/SQLite synchronization, and raw Markdown after reopening the PDF. A mixed fixture confirms that native rich text decodes text entities while preserving literal HTML inside Markdown code. Existing rich comments retain native-editor delegation; recognized native markup is converted for display without executing arbitrary HTML. Image syntax remains literal, and links allow only `http`, `https`, and `mailto` through Zotero's external URL launcher without navigating the PDF frame. No Markdown runtime package was added.
+
+The parser implements a compact subset rather than full CommonMark or mathematical notation. The native results use the isolated synthetic library on macOS; they do not by themselves claim a screenshot review of the user's installed Markdown UI or an integration retest of named third-party add-ons.
+
+## Historical 0.3.1 note annotation coverage
 
 Margin Notes 0.3.1 expands the displayed annotation types from highlights and underlines to Zotero note annotations. Native note annotations do not have selected-text quotes, so the margin card hides the empty quote area and shows the annotation comment.
 
@@ -65,7 +74,17 @@ The completed 0.3.1 runtime reports cover note visibility, double-click editing,
 
 ## Verified coverage
 
-The `0.3.1` build passed **246/246** isolated Zotero 9.0.6 runtime checks, **263/263** isolated Zotero 10.0.6 runtime checks, and **26/26** Node tests on macOS on 2026-10-08. Update metadata verification, syntax checks, diff checks, and the reproducible XPI build also passed. The current artifact and the XPI installed in actual Zotero 10.0.6 UI both have SHA-256 `9648934bc1566ac7557bd6701ec54288c786a6ec02aa2752e749ecfc7db6922f`.
+| Build | Checked on | Zotero 9.0.6 | Zotero 10.0.6 | Node tests |
+| --- | --- | --- | --- | --- |
+| **0.4.0** | **2026-10-26** | **271/271 passed** | **288/288 passed** | **44/44 passed** |
+
+JavaScript syntax checks, diff whitespace checks, and the 0.4.0 XPI build also passed. The artifact SHA-256 is `9282e7e44152982c840f4132cc1de747e93e662ac6756f8f17f7025b88419d8c`. The [public 0.4.0 evidence](evidence/compatibility-0.4.0.json) includes normalized version metadata and every completed native check name/result, omitting private paths, library content, and logs.
+
+The 0.4.0 Zotero 10.0.6 run includes 17 additional Reading Mode assertions compared with the Zotero 9.0.6 baseline. These assertions cover controlled Reading Mode flags and iframe visibility in the real PDF reader, not the full separate Reading Mode UI. These runs used temporary profiles and separate libraries, without the named third-party add-ons recorded in earlier installed-state observations.
+
+## Historical verified coverage
+
+The historical `0.3.1` build passed **246/246** isolated Zotero 9.0.6 runtime checks, **263/263** isolated Zotero 10.0.6 runtime checks, and **26/26** Node tests on macOS on 2026-10-08. Update metadata verification, syntax checks, diff checks, and the reproducible XPI build also passed. The 0.3.1 artifact and the XPI installed during that check in actual Zotero 10.0.6 UI both had SHA-256 `9648934bc1566ac7557bd6701ec54288c786a6ec02aa2752e749ecfc7db6922f`. See the [historical 0.3.1 evidence](evidence/compatibility-0.3.1.json).
 
 The Zotero 10.0.6 run includes 17 additional Reading Mode assertions compared with the Zotero 9.0.6 baseline. These assertions cover controlled Reading Mode flags and iframe visibility in the real PDF reader, not the full separate Reading Mode UI.
 

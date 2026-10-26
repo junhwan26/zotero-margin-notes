@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 - 2026-10-26
+
+- Render Markdown in margin notes and the overflow list: headings, emphasis, lists, quotes, code, and links.
+- Keep the original Markdown in double-click editors and Zotero annotation storage, including sidebar edits.
+- Build formatted content from safe DOM elements; raw HTML and images remain inert, and links open through Zotero's external browser handler.
+- Preserve selected note text when an unchanged card is laid out again, and retain the native rich-comment editor fallback.
+- Add Markdown rendering, raw-source editing, persistence, and safety coverage alongside the existing native Zotero reader regression suite.
+
 ## 0.3.1 - 2026-10-08
 
 - Display comments from Zotero note annotations in the outer PDF margins, alongside highlight and underline comments.

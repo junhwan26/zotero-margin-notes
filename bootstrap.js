@@ -13,6 +13,7 @@ async function startup(data) {
   marginNotesScope = scope;
   Services.scriptloader.loadSubScript(root + 'src/i18n.js', scope);
   Services.scriptloader.loadSubScript(root + 'src/layout.js', scope);
+  Services.scriptloader.loadSubScript(root + 'src/markdown.js', scope);
   Services.scriptloader.loadSubScript(root + 'src/overlay.js', scope);
   scope.MarginNotes.start();
 }

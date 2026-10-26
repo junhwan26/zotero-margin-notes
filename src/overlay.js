@@ -41,12 +41,40 @@
     .mn-error { color:#a44435; font-size:11px; line-height:1.35; padding:0 10px 8px; }
     .mn-open:focus-visible, .mn-overflow:focus-visible, .mn-tray button:focus-visible,
     .mn-editor button:focus-visible,
-    .mn-editor textarea:focus-visible, .mn-comment:focus-visible { outline:2px solid #538bd5; outline-offset:-2px; }
+    .mn-editor textarea:focus-visible, .mn-comment:focus-visible,
+    .mn-comment a:focus-visible { outline:2px solid #538bd5; outline-offset:-2px; }
     .mn-quote { margin:0 10px 6px; opacity:.68; font-size:11px; line-height:1.4;
       display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
       overflow-wrap:anywhere; }
-    .mn-comment { padding:0 10px 10px; white-space:pre-wrap; overflow-wrap:anywhere;
+    .mn-comment { padding:0 10px 10px; white-space:normal; overflow-wrap:anywhere;
       overflow-y:auto; max-height:148px; box-sizing:border-box; scrollbar-width:thin; }
+    .mn-comment p { margin:0 0 .55em; }
+    .mn-comment > :last-child { margin-bottom:0; }
+    .mn-comment h1, .mn-comment h2, .mn-comment h3, .mn-comment h4,
+    .mn-comment h5, .mn-comment h6 { margin:.6em 0 .3em; line-height:1.3; font-weight:700; }
+    .mn-comment > :first-child { margin-top:0; }
+    .mn-comment h1 { font-size:1.4em; }
+    .mn-comment h2 { font-size:1.25em; }
+    .mn-comment h3 { font-size:1.1em; }
+    .mn-comment h4, .mn-comment h5, .mn-comment h6 { font-size:1em; }
+    .mn-comment ul, .mn-comment ol { margin:.35em 0 .55em; padding-left:1.5em; }
+    .mn-comment ul { list-style:disc outside; }
+    .mn-comment ol { list-style:decimal outside; }
+    .mn-comment li { margin:.15em 0; }
+    .mn-comment li > p { margin:0; }
+    .mn-comment .mn-task-item { list-style:none; }
+    .mn-comment .mn-task-item > p:first-of-type { display:inline; }
+    .mn-comment blockquote { margin:.45em 0; padding-left:.65em;
+      border-left:3px solid #bac1ca; color:#505762; }
+    .mn-comment code { font: .92em/1.45 ui-monospace,SFMono-Regular,Consolas,monospace;
+      white-space:pre-wrap; background:#eef0f3; padding:.1em .25em; border-radius:3px; }
+    .mn-comment pre { margin:.5em 0; padding:7px; background:#eef0f3;
+      border-radius:4px; white-space:pre; overflow:auto; max-height:120px; }
+    .mn-comment pre code { white-space:pre; padding:0; background:none; }
+    .mn-comment a { color:#175db1; text-decoration:underline; cursor:pointer; }
+    .mn-comment hr { border:0; border-top:1px solid var(--mn-border); margin:.6em 0; }
+    .mn-comment table { border-collapse:collapse; font-size:.92em; margin:.5em 0; }
+    .mn-comment th, .mn-comment td { border:1px solid var(--mn-border); padding:3px 5px; }
     .mn-overflow { position:absolute; pointer-events:auto; border:1px solid var(--mn-border);
       border-radius:6px; background:var(--mn-bg); font-size:12px; cursor:pointer; }
     .mn-tray { position:absolute; pointer-events:auto; background:var(--mn-bg);
@@ -84,7 +112,15 @@
   }
 
   function richComment(value) {
-    return /<\/?(?:i|b|sub|sup)\b/i.test(String(value || ''));
+    return root.MarginNotesMarkdown.hasRichText(String(value || ''), true);
+  }
+
+  function decodeEntities(doc, value) {
+    if (!value.includes('&')) return value;
+    // Escape tag openings first: this inert document can only decode text.
+    const parsed = new doc.defaultView.DOMParser().parseFromString(
+      '<body>' + value.replace(/</g, '&lt;') + '</body>', 'text/html');
+    return parsed.body.textContent || '';
   }
 
   function color(value) {
@@ -248,9 +284,6 @@
       card.input.setAttribute('aria-label', this.owner.i18n.t('editorLabel'));
       card.save.textContent = this.owner.i18n.t('save');
       card.cancel.textContent = this.owner.i18n.t('cancel');
-      if (card.rawComment !== annotation.comment) {
-        card.rawComment = annotation.comment;
-      }
       const quote = annotation.text || '';
       if (card.rawQuote !== quote) {
         card.rawQuote = quote;
@@ -265,7 +298,7 @@
 
     renderCardEditState(card, annotation) {
       const edit = this.edits.get(annotation.id);
-      card.comment.textContent = plainText(this.doc, annotation.comment);
+      this.renderComment(card.comment, annotation);
       this.describeEditGesture(card.comment, annotation);
       card.editor.hidden = !edit;
       card.comment.hidden = !!edit;
@@ -298,10 +331,36 @@
         richComment(annotation.comment) ? 'editRichTitle' : 'editTitle');
     }
 
+    renderComment(comment, annotation) {
+      const source = String(annotation.comment || '');
+      if (comment.mnSource === source) return;
+      const legacyHTML = root.MarginNotesMarkdown.hasRichText(source);
+      comment.replaceChildren(root.MarginNotesMarkdown.render(this.doc, source, {
+        legacyHTML,
+        decodeText: legacyHTML ? value => decodeEntities(this.doc, value) : undefined,
+      }));
+      comment.mnSource = source;
+      if (comment.mnLinksBound) return;
+      comment.mnLinksBound = true;
+      const openLink = event => {
+        const link = event.target.closest('a');
+        if (!link || !comment.contains(link)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const url = root.MarginNotesMarkdown.safeURL(link.getAttribute('href'));
+        if (url && (event.button === 0 || event.button === 1)) {
+          try { root.Zotero.launchURL(url); }
+          catch (error) { this.owner.report(error); }
+        }
+      };
+      comment.addEventListener('click', openLink);
+      comment.addEventListener('auxclick', openLink);
+    }
+
     bindEditGesture(note, getAnnotation) {
       note.addEventListener('dblclick', event => {
         // Keep native button actions and text selection inside an active editor.
-        if (event.target.closest('button, .mn-editor')) return;
+        if (event.target.closest('button, a, .mn-editor')) return;
         event.preventDefault();
         this.beginEdit(getAnnotation());
       });
@@ -533,7 +592,8 @@
         button.type = 'button';
         button.title = this.owner.i18n.t('openTitle');
         button.addEventListener('click', () => this.owner.navigate(annotation.id));
-        const comment = element(this.doc, 'div', 'mn-comment', plainText(this.doc, annotation.comment));
+        const comment = element(this.doc, 'div', 'mn-comment');
+        this.renderComment(comment, annotation);
         comment.tabIndex = 0;
         comment.setAttribute('aria-label', this.owner.i18n.t('commentLabel'));
         this.describeEditGesture(comment, annotation);

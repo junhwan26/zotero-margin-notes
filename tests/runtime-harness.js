@@ -439,9 +439,12 @@ async function runSmoke(timers) {
     await settle();
 
     await mark('preserving rich comment formatting');
-    const richComment = '<b>Rich text stays bold</b> and H<sub>2</sub>O';
+    const richComment = '<b>Rich text stays bold</b> and H<sub>2</sub>O &amp; `<b>literal</b>`';
     internal._annotationManager.updateAnnotations(Cu.cloneInto([{ id: lowerRight.key, comment: richComment }], reader._iframeWindow));
     await waitFor('rich comment margin card', () => card(lowerRight.key)?.textContent.includes('Rich text stays bold'));
+    check('native rich text preserves literal Markdown code and decodes text entities',
+      card(lowerRight.key).querySelector('.mn-comment code')?.textContent === '<b>literal</b>' &&
+      card(lowerRight.key).querySelector('.mn-comment')?.textContent.includes('H2O & '));
     await native.doubleClick(card(lowerRight.key).querySelector('.mn-comment'));
     await waitFor('rich comment opened in native sidebar', () => internal._state.sidebarOpen && readerDoc.querySelector(`[data-sidebar-annotation-id="${lowerRight.key}"] .comment .content`));
     const richSidebar = readerDoc.querySelector(`[data-sidebar-annotation-id="${lowerRight.key}"] .comment .content`);
@@ -451,6 +454,139 @@ async function runSmoke(timers) {
     internal.toggleSidebar(false);
     readerDoc.querySelector('.mn-fit').click();
     await settle();
+
+    await mark('rendering Markdown without changing annotation comments');
+    const markdownSource = '# Markdown\n**Bold 한국어** and *emphasis* with `x < y`.\n- First item\n- Second item\n\n[Zotero](https://www.zotero.org/)';
+    internal._annotationManager.updateAnnotations(Cu.cloneInto([{ id: lowerLeft.key, comment: markdownSource }], reader._iframeWindow));
+    const markdownBody = await waitFor('formatted Markdown margin card', () => {
+      const body = card(lowerLeft.key)?.querySelector('.mn-comment');
+      return body?.querySelector('h1') && body.querySelector('strong') && body;
+    });
+    check('Markdown margin cards render headings, emphasis, lists, code, and safe links',
+      markdownBody.querySelector('h1')?.textContent === 'Markdown' &&
+      markdownBody.querySelector('strong')?.textContent === 'Bold 한국어' &&
+      markdownBody.querySelector('em')?.textContent === 'emphasis' &&
+      markdownBody.querySelector('code')?.textContent === 'x < y' &&
+      markdownBody.querySelectorAll('ul > li').length === 2 &&
+      markdownBody.querySelector('a')?.getAttribute('href') === 'https://www.zotero.org/');
+    const markdownLink = markdownBody.querySelector('a');
+    const markdownLocation = pdfWindow.location.href;
+    const originalLaunchURL = Zotero.launchURL;
+    const markdownLaunches = [];
+    let markdownLinkClick;
+    const observeMarkdownLink = event => { markdownLinkClick = event; };
+    markdownLink.addEventListener('click', observeMarkdownLink, { once: true });
+    try {
+      Zotero.launchURL = url => { markdownLaunches.push(url); };
+      await native.clickElement(markdownLink);
+      check('Markdown links use Zotero URL launching and prevent native frame navigation',
+        markdownLaunches.length === 1 && markdownLaunches[0] === 'https://www.zotero.org/' &&
+        markdownLinkClick?.isTrusted && markdownLinkClick.defaultPrevented);
+      check('clicking a Markdown link preserves the PDF, editor state, and raw comment',
+        pdfWindow.location.href === markdownLocation && !visibleInput(lowerLeft.key) &&
+        currentAnnotation(lowerLeft.key).comment === markdownSource);
+    } finally {
+      Zotero.launchURL = originalLaunchURL;
+      markdownLink.removeEventListener('click', observeMarkdownLink);
+    }
+    await snapshot('formatted Markdown cards', true);
+    const markdownStrong = markdownBody.querySelector('strong');
+    const displayRange = doc.createRange();
+    displayRange.selectNodeContents(markdownStrong);
+    const displaySelection = pdfWindow.getSelection();
+    displaySelection.removeAllRanges();
+    displaySelection.addRange(displayRange);
+    const selectedMarkdownText = displaySelection.toString();
+    overlay.render();
+    await settle();
+    check('unchanged Markdown rerenders preserve selected display text and its DOM nodes',
+      selectedMarkdownText === 'Bold 한국어' && displaySelection.toString() === selectedMarkdownText &&
+      card(lowerLeft.key)?.querySelector('.mn-comment strong')?.isSameNode(markdownStrong));
+    displaySelection.removeAllRanges();
+    const markdownFields = preservedFields(currentAnnotation(lowerLeft.key));
+    const markdownEditor = await beginEditFrom(lowerLeft.key, markdownStrong,
+      'double-clicking nested Markdown text');
+    check('double-clicking formatted text edits the exact raw Markdown source', markdownEditor.value === markdownSource);
+    checkSelectionPalette('Markdown textarea', markdownEditor);
+    typeDraft(lowerLeft.key, '**Cancelled Markdown must not replace the comment**');
+    clickAction(lowerLeft.key, 'cancel');
+    await waitForPersistedComment(lowerLeft, markdownSource);
+    check('cancelling Markdown edits preserves raw source and formatted display',
+      currentAnnotation(lowerLeft.key).comment === markdownSource &&
+      card(lowerLeft.key)?.querySelector('.mn-comment strong')?.textContent === 'Bold 한국어');
+    await beginEditFrom(lowerLeft.key, card(lowerLeft.key).querySelector('.mn-comment strong'),
+      'double-clicking Markdown before Save');
+    const markdownSaved = '## Saved Markdown\n**Saved 한국어** and `a < b & c`.';
+    typeDraft(lowerLeft.key, markdownSaved);
+    clickAction(lowerLeft.key, 'save');
+    await waitFor('saved Markdown raw reader state and display', () =>
+      currentAnnotation(lowerLeft.key)?.comment === markdownSaved &&
+      card(lowerLeft.key)?.querySelector('.mn-comment h2')?.textContent === 'Saved Markdown');
+    await waitForPersistedComment(lowerLeft, markdownSaved);
+    check('Markdown Save preserves raw syntax in reader state, SQLite, and item cache',
+      Zotero.Items.get(lowerLeft.id).annotationComment === markdownSaved &&
+      preservedFields(currentAnnotation(lowerLeft.key)) === markdownFields);
+
+    const htmlCodeMarkdown = '```html\n<b>demo</b>\n```\n\nInline `<i>code</i>`.';
+    internal._annotationManager.updateAnnotations(Cu.cloneInto([{ id: lowerLeft.key, comment: htmlCodeMarkdown }], reader._iframeWindow));
+    const htmlCodeBody = await waitFor('Markdown code containing native rich-text tag names', () => {
+      const body = card(lowerLeft.key)?.querySelector('.mn-comment');
+      return body?.querySelector('pre code')?.textContent.includes('<b>demo</b>') && body;
+    });
+    check('fenced and inline HTML code renders literally without native rich formatting',
+      htmlCodeBody.querySelectorAll('code').length === 2 &&
+      Array.from(htmlCodeBody.querySelectorAll('code')).some(code => code.textContent === '<i>code</i>') &&
+      !htmlCodeBody.querySelector('b, i'));
+    const htmlCodeEditor = await beginEditFrom(lowerLeft.key, htmlCodeBody.querySelector('pre code'),
+      'double-clicking fenced HTML code');
+    check('Markdown HTML code edits the raw source directly without native rich-text delegation',
+      htmlCodeEditor.value === htmlCodeMarkdown && !internal._state.sidebarOpen);
+    clickAction(lowerLeft.key, 'cancel');
+    await waitForPersistedComment(lowerLeft, htmlCodeMarkdown);
+
+    const unsafeMarkdown = '[Unsafe](javascript:alert%281%29) ![Remote image](https://example.invalid/never-load.png)\n\n<img src="data:image/png,invalid" onerror="void 0">\n\n```html\n<script>void 0</script>\n```';
+    internal._annotationManager.updateAnnotations(Cu.cloneInto([{ id: lowerLeft.key, comment: unsafeMarkdown }], reader._iframeWindow));
+    const unsafeBody = await waitFor('inert Markdown security fixture', () => {
+      const body = card(lowerLeft.key)?.querySelector('.mn-comment');
+      return body?.querySelector('pre code')?.textContent.includes('<script>void 0</script>') && body;
+    });
+    check('Markdown HTML, unsafe URLs, and images cannot create active content',
+      !unsafeBody.querySelector('script, img, svg, iframe, object, embed, style, link') &&
+      !Array.from(unsafeBody.querySelectorAll('*')).some(node =>
+        Array.from(node.attributes).some(attribute => /^on/i.test(attribute.name))) &&
+      !Array.from(unsafeBody.querySelectorAll('a')).some(link =>
+        /^(?:javascript|data|vbscript):/i.test((link.getAttribute('href') || '').trim())) &&
+      unsafeBody.textContent.includes('<img src=') && unsafeBody.textContent.includes('Remote image'));
+    await waitForPersistedComment(lowerLeft, unsafeMarkdown);
+    check('rendering unsafe Markdown leaves its stored source unchanged', currentAnnotation(lowerLeft.key).comment === unsafeMarkdown);
+
+    internal.toggleSidebar(true);
+    internal.setSidebarView('annotations');
+    internal.setSelectedAnnotations(Cu.cloneInto([lowerLeft.key], reader._iframeWindow));
+    const markdownSidebar = await waitFor('native Markdown sidebar comment', () =>
+      readerDoc.querySelector(`[data-sidebar-annotation-id="${lowerLeft.key}"] .comment .content`));
+    markdownSidebar.closest('.comment').dispatchEvent(new readerWindow.MouseEvent('click', {
+      bubbles: true, cancelable: true, view: readerWindow
+    }));
+    await waitFor('native Markdown sidebar edit mode', () => markdownSidebar.isContentEditable);
+    const markdownSidebarValue = '## Sidebar Markdown\n**Sidebar 한국어** and `raw < source`.';
+    markdownSidebar.focus();
+    const markdownSidebarRange = readerDoc.createRange();
+    markdownSidebarRange.selectNodeContents(markdownSidebar);
+    const markdownSidebarSelection = readerWindow.getSelection();
+    markdownSidebarSelection.removeAllRanges();
+    markdownSidebarSelection.addRange(markdownSidebarRange);
+    readerDoc.execCommand('insertText', false, markdownSidebarValue);
+    markdownSidebar.dispatchEvent(new readerWindow.InputEvent('input', { bubbles: true,
+      inputType: 'insertText', data: markdownSidebarValue }));
+    await waitFor('native sidebar preserves raw Markdown', () => currentAnnotation(lowerLeft.key)?.comment === markdownSidebarValue);
+    await waitForPersistedComment(lowerLeft, markdownSidebarValue);
+    internal.toggleSidebar(false);
+    readerDoc.querySelector('.mn-fit').click();
+    await waitFor('native sidebar Markdown reaches formatted margin display', () =>
+      card(lowerLeft.key)?.querySelector('.mn-comment h2')?.textContent === 'Sidebar Markdown' &&
+      card(lowerLeft.key)?.querySelector('.mn-comment strong')?.textContent === 'Sidebar 한국어');
+    check('native sidebar Markdown edits synchronize raw storage and formatted margin display', true);
     const finalComment = currentAnnotation(left.key).comment;
     await waitForPersistedComment(left, finalComment);
 
@@ -501,7 +637,7 @@ async function runSmoke(timers) {
       return row && !row.querySelector('.mn-editor').hidden && row.querySelector('textarea');
     });
     checkSelectionPalette('overflow textarea', overflowInput);
-    const overflowValue = 'OVERFLOW SAVED: this hidden comment can be edited in the tray.';
+    const overflowValue = '**OVERFLOW SAVED:** this hidden comment can be edited in the tray with `raw Markdown`.\n\n- Keep this longer comment in the overflow tray.';
     overflowInput.value = overflowValue;
     overflowInput.dispatchEvent(new pdfWindow.Event('input', { bubbles: true }));
     activeOverflowRow().querySelector('.mn-save').click();
@@ -509,10 +645,24 @@ async function runSmoke(timers) {
     await waitForPersistedComment(overflowItem, overflowValue);
     check('overflow tray Save updates the native annotation and SQLite', true);
     await waitFor('saved overflow comment is displayed', () => {
-      return activeOverflowRow()?.querySelector('.mn-comment')?.textContent === overflowValue ||
-        card(overflowID)?.querySelector('.mn-comment')?.textContent === overflowValue;
+      const body = activeOverflowRow()?.querySelector('.mn-comment') || card(overflowID)?.querySelector('.mn-comment');
+      return body?.querySelector('strong')?.textContent === 'OVERFLOW SAVED:' &&
+        body.querySelector('code')?.textContent === 'raw Markdown';
     });
-    check('overflow tray shows the saved comment', true);
+    check('overflow tray shows saved Markdown formatting', true);
+    const formattedOverflowRow = await reopenOverflowRow();
+    await native.doubleClick(formattedOverflowRow.querySelector('.mn-comment strong'));
+    const rawOverflowEditor = await waitFor('formatted overflow comment opens raw editor', () => {
+      const row = activeOverflowRow();
+      return row && !row.querySelector('.mn-editor').hidden && row.querySelector('textarea');
+    });
+    check('double-clicking formatted overflow text preserves raw Markdown for editing', rawOverflowEditor.value === overflowValue);
+    rawOverflowEditor.value = '**Cancelled overflow draft**';
+    rawOverflowEditor.dispatchEvent(new pdfWindow.Event('input', { bubbles: true }));
+    activeOverflowRow().querySelector('.mn-cancel').click();
+    await settle();
+    await waitForPersistedComment(overflowItem, overflowValue);
+    check('cancelling formatted overflow edits preserves raw saved Markdown', currentAnnotation(overflowID)?.comment === overflowValue);
     overlay.layer.querySelector('.mn-tray-heading button')?.click();
     await settle();
     await mark('narrow viewport');
@@ -812,6 +962,9 @@ async function runSmoke(timers) {
     const restored = await waitFor('reopened annotation state', () => reopened._internalReader?._state.annotations.find(a => a.id === left.key));
     check('comment edits survive closing and reopening the PDF', restored.comment === finalComment);
     check('rich formatting survives closing and reopening the PDF', reopened._internalReader._state.annotations.find(a => a.id === lowerRight.key)?.comment === richComment);
+    check('raw Markdown survives closing and reopening the PDF',
+      reopened._internalReader._state.annotations.find(a => a.id === lowerLeft.key)?.comment === markdownSidebarValue &&
+      reopened._internalReader._state.annotations.find(a => a.id === overflowID)?.comment === overflowValue);
     check('sticky-note edits survive closing and reopening the PDF',
       reopened._internalReader._state.annotations.find(a => a.id === sticky.key)?.comment === stickySidebarValue);
     report.passed = true;

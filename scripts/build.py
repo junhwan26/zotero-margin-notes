@@ -9,7 +9,7 @@ manifest = json.loads((root / 'manifest.json').read_text())
 assert json.loads((root / 'package.json').read_text())['version'] == manifest['version'], 'Package and extension versions must match'
 out = root / 'dist' / f"zotero-margin-notes-{manifest['version']}.xpi"
 out.parent.mkdir(exist_ok=True)
-files = ['manifest.json', 'bootstrap.js', 'src/i18n.js', 'src/layout.js', 'src/overlay.js', 'LICENSE']
+files = ['manifest.json', 'bootstrap.js', 'src/i18n.js', 'src/layout.js', 'src/markdown.js', 'src/overlay.js', 'LICENSE']
 # These small sources use stored entries so hashes also match across zlib versions.
 with zipfile.ZipFile(out, 'w', zipfile.ZIP_STORED) as archive:
     for name in files:
