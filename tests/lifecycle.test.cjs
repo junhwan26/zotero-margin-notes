@@ -123,6 +123,87 @@ test('suspended Reading Mode drafts are released when their PDF pane closes', ()
   r.plugin.stop();
 });
 
+function commentRuntime(cloneInto) {
+  const r = runtime();
+  const calls = { updates: [], selections: [], sidebar: [] };
+  const errors = [];
+  const readerWindow = {};
+  const reader = { type: 'pdf', _iframeWindow: readerWindow,
+    navigate() {},
+    _internalReader: {
+      _state: { annotations: [{ id: 'A', comment: 'before' }] },
+      _annotationManager: { updateAnnotations: changes => calls.updates.push(changes) },
+      toggleSidebar: open => calls.sidebar.push(open),
+      setSidebarView: view => calls.sidebar.push(view),
+      setSelectedAnnotations: ids => calls.selections.push(ids),
+    },
+  };
+  r.sandbox.Zotero.logError = error => errors.push(error);
+  if (cloneInto) r.sandbox.Cu = { cloneInto };
+  r.plugin.start();
+  return { ...r, controller: r.plugin.ensure(reader), reader, readerWindow, calls, errors };
+}
+
+test('comment saves clone their payload into the reader window before native dispatch', () => {
+  const clones = [];
+  const r = commentRuntime((payload, target) => {
+    const cloned = JSON.parse(JSON.stringify(payload));
+    clones.push({ payload, target, cloned });
+    return cloned;
+  });
+  assert.equal(r.controller.updateComment('A', 'before', 'after').ok, true);
+  assert.equal(clones.length, 1);
+  assert.equal(clones[0].target, r.readerWindow);
+  assert.notEqual(clones[0].payload, clones[0].cloned);
+  assert.equal(r.calls.updates[0], clones[0].cloned);
+  assert.deepEqual(r.calls.updates[0], [{ id: 'A', comment: 'after' }]);
+  assert.equal(r.errors.length, 0);
+  r.plugin.stop();
+});
+
+test('rich-comment delegation clones selection IDs into the reader window', () => {
+  const clones = [];
+  const r = commentRuntime((payload, target) => {
+    const cloned = JSON.parse(JSON.stringify(payload));
+    clones.push({ payload, target, cloned });
+    return cloned;
+  });
+  r.controller.openAnnotationEditor('A');
+  assert.equal(clones.length, 1);
+  assert.equal(clones[0].target, r.readerWindow);
+  assert.notEqual(clones[0].payload, clones[0].cloned);
+  assert.equal(r.calls.selections[0], clones[0].cloned);
+  assert.deepEqual(r.calls.selections[0], ['A']);
+  assert.deepEqual(r.calls.sidebar, [true, 'annotations']);
+  assert.equal(r.errors.length, 0);
+  r.plugin.stop();
+});
+
+test('unavailable reader bridges fail visibly without passing raw privileged arrays', () => {
+  for (const operation of ['save', 'rich editor']) {
+    for (const failure of ['missing Cu', 'missing cloneInto', 'clone error', 'missing reader window']) {
+      const expected = new Error(failure);
+      const missingBridge = failure === 'missing Cu' || failure === 'missing cloneInto';
+      const r = commentRuntime(missingBridge ? undefined : (_payload, target) => {
+        if (failure === 'clone error' || !target) throw expected;
+        throw new Error('An unavailable target must never be dispatched');
+      });
+      if (failure === 'missing cloneInto') r.sandbox.Cu = {};
+      if (failure === 'missing reader window') delete r.reader._iframeWindow;
+      if (operation === 'save') {
+        const result = r.controller.updateComment('A', 'before', 'after');
+        assert.equal(result.ok, false, failure);
+        assert.equal(result.message, 'Could not save', failure);
+      } else r.controller.openAnnotationEditor('A');
+      assert.equal(r.calls.updates.length, 0, `${operation}: ${failure}`);
+      assert.equal(r.calls.selections.length, 0, `${operation}: ${failure}`);
+      assert.equal(r.errors.length, 1, `${operation}: ${failure}`);
+      if (failure === 'clone error' || failure === 'missing reader window') assert.equal(r.errors[0], expected);
+      r.plugin.stop();
+    }
+  }
+});
+
 test('shutdown cancels startup that is awaiting Zotero initialization', async () => {
   let resolveInitialization;
   const sandbox = {

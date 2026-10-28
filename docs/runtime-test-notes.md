@@ -22,6 +22,7 @@ The JSON evidence is written to `dist/runtime-smoke-report.json`. Each geometry 
 - Keyboard selection, search, zoom, page navigation, and the native copy conversion handler. The copy check uses a synthetic copy event and does not touch the shared OS clipboard.
 - Annotation preservation while Delete, Backspace, Shift+Arrow, and Command+Z are dispatched from a focused margin comment.
 - Crowded comments, narrow viewport behavior, overflow controls, toggle behavior, overlay/toolbar removal, and restoring the keyboard guard.
+- Injected teardown failure: preserve the original diagnostic, continue later cleanups, and remove styles and overlays.
 - Zotero 10 Reading Mode suspension per PDF pane, including keeping margin cards out of Reading Mode, making Fit Notes ignore hidden PDF panes, and resuming cards after returning to PDF view.
 - Unsaved draft preservation through temporary Reading Mode suspension, restored draft UI, including the overflow editor, and Cancel behavior that leaves the Zotero annotation database unchanged.
 
@@ -59,7 +60,15 @@ Before mounting each DMG, CI verifies these SHA-256 hashes from the workflow mat
 b8e43f4a13cc6bbd1a979380bededd7eb44e7611ea2501f8d1f0293fbc94731c
 ```
 
-## 0.4.1 responsive-width coverage
+## 0.4.2 cleanup coverage
+
+Before cleanup, the unchanged 0.4.1 baseline passed 49 Node tests, 292 native Zotero 9.0.6 checks, and 309 native Zotero 10.0.6 checks. Added Node contracts cover visible English/Korean labels, locale precedence and placeholder fallback, successful reader-window cloning, and unavailable/failed cloning without raw-array dispatch. The unavailable-bridge assertion failed against the original code and passes after removal of that alternate path.
+
+The native harness now injects a cleanup failure through the real overlay's cleanup list, records the original error through the production reporter, and checks that later cleanups and style/overlay removal still run. Existing native reader, Markdown, editing, responsive-width, and Reading Mode checks remain in the suite. UI and annotation storage are unchanged; see the [cleanup report](cleanup-0.4.2.md).
+
+The final runs passed **294/294 Zotero 9.0.6 checks** and **311/311 Zotero 10.0.6 checks**. Node tests passed **56/56** (20 layout, 18 Markdown, 12 lifecycle/bridge, 6 localization). Independent changed-code review found no actionable issue and passed 36 focused tests.
+
+## Historical 0.4.1 responsive-width coverage
 
 Margin Notes 0.4.1 removes the fixed preferred-width cap so cards use the full available outer margin while the font size stays unchanged. Each card is measured at both actual lane widths before placement; the chosen side uses its corresponding height. The 49-test Node suite includes responsive lane widths, unequal left/right heights, placement safety, and existing Markdown/lifecycle/localization coverage. Native resize checks exercise text wrapping, editor focus, unsaved draft content, and selected editor text without changing the stored comment. The earlier Markdown selection test separately verifies displayed-text selection across an unchanged rerender.
 
@@ -88,9 +97,12 @@ The completed 0.3.1 runtime reports cover note visibility, double-click editing,
 
 | Build | Checked on | Zotero 9.0.6 | Zotero 10.0.6 | Node tests |
 | --- | --- | --- | --- | --- |
-| **0.4.1** | **2026-10-26** | **292/292 passed** | **309/309 passed** | **49/49 passed** |
+| **0.4.2** | **2026-10-28** | **294/294 passed** | **311/311 passed** | **56/56 passed** |
+| 0.4.1 | 2026-10-26 | 292/292 passed | 309/309 passed | 49/49 passed |
 
-The 0.4.1 artifact SHA-256 is `6183a1aefafc68766516b49b361d6af4136a37304497c699dd7dcf61fc726ec5`. The [public 0.4.1 evidence](evidence/compatibility-0.4.1.json) contains normalized versions and exact native check name/result pairs without private paths, fixture text, or logs. The two runs used temporary profiles and separate libraries, without the named third-party add-ons recorded in earlier observations. The Zotero 10 run adds 17 controlled Reading Mode checks; it does not exercise the full separate Reading Mode UI.
+The 0.4.2 artifact SHA-256 is `a0d05f1a8bae8888989fed738d15ba2488a6226b62779700b95c18fe1b8a2b43`. The [public 0.4.2 evidence](evidence/compatibility-0.4.2.json) contains all 605 native check name/result pairs without private paths, fixture text, or logs. The two additional assertions per version verify teardown diagnostics and continued cleanup.
+
+The historical 0.4.1 artifact SHA-256 is `6183a1aefafc68766516b49b361d6af4136a37304497c699dd7dcf61fc726ec5`. The [public 0.4.1 evidence](evidence/compatibility-0.4.1.json) contains normalized versions and exact native check name/result pairs without private paths, fixture text, or logs. The two runs used temporary profiles and separate libraries, without the named third-party add-ons recorded in earlier observations. The Zotero 10 run adds 17 controlled Reading Mode checks; it does not exercise the full separate Reading Mode UI.
 
 ## Historical verified coverage
 

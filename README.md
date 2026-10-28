@@ -34,7 +34,7 @@
 
 ## Quick Start
 
-1. Download `zotero-margin-notes-0.4.1.xpi` from the [latest release](https://github.com/junhwan26/zotero-margin-notes/releases/latest).
+1. Download `zotero-margin-notes-0.4.2.xpi` from the [latest release](https://github.com/junhwan26/zotero-margin-notes/releases/latest).
 2. In Zotero, open **Tools -> Plugins**.
 3. Open the gear menu, choose **Install Plugin From File...**, and select the XPI.
 4. Open a PDF, add a comment to a highlight, underline, or note annotation, then use **Margin Notes** in the reader toolbar.
@@ -85,7 +85,9 @@ Task markers, blockquotes, and tables are also supported. Links with safe URLs o
 
 Margin Notes has no required third-party Zotero add-on and no npm runtime package dependency. It targets Zotero `9.0` through `10.0.*`, with native validation on Zotero `9.0.6` and `10.0.6`. The plugin is PDF-only; EPUB and web snapshots are ignored.
 
-The `0.4.1` build passed **49/49 Node tests**, **292/292 isolated Zotero 9.0.6 checks**, and **309/309 isolated Zotero 10.0.6 checks** on macOS on 2026-10-26. The runs cover responsive wrapping at unchanged text size, placement safety, editor draft/focus/selection preservation, and the existing reader suite. See the [0.4.1 public evidence](docs/evidence/compatibility-0.4.1.json) and [compatibility notes](docs/compatibility.md).
+The `0.4.2` cleanup preserves the UI, fixed text size, responsive layout, and annotation storage. It removes unused translations and duplicate work, requires Zotero's reader-window cloning bridge for comment updates, and records teardown errors while continuing cleanup. **56/56 Node tests, 294/294 Zotero 9.0.6 checks, and 311/311 Zotero 10.0.6 checks passed** in isolated macOS profiles on 2026-10-28. See the [public evidence and artifact hash](docs/evidence/compatibility-0.4.2.json), [cleanup report](docs/cleanup-0.4.2.md), and [compatibility notes](docs/compatibility.md).
+
+Historical `0.4.1` validation passed **49/49 Node tests**, **292/292 isolated Zotero 9.0.6 checks**, and **309/309 isolated Zotero 10.0.6 checks** on macOS on 2026-10-26. The runs cover responsive wrapping at unchanged text size, placement safety, editor draft/focus/selection preservation, and the existing reader suite. See the [0.4.1 public evidence](docs/evidence/compatibility-0.4.1.json) and [compatibility notes](docs/compatibility.md).
 
 Historical `0.4.0` validation passed **44/44 Node tests**, **271/271 isolated Zotero 9.0.6 checks**, **288/288 isolated Zotero 10.0.6 checks**, syntax checks, diff checks, and the XPI build on macOS on 2026-10-26. Those runs covered Markdown display/raw editing, sidebar synchronization, inert HTML/images/unsafe links, mixed native-rich/code comments, and the existing reader behavior suite. The [0.4.0 public evidence](docs/evidence/compatibility-0.4.0.json) remains available. Named third-party add-on observations below remain historical.
 

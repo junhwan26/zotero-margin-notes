@@ -239,17 +239,14 @@
         card.dataset.pageIndex = pageIndex;
         card.open = element(this.doc, 'button', 'mn-open');
         card.open.type = 'button';
-        card.open.title = this.owner.i18n.t('openTitle');
         card.open.addEventListener('click', () => this.owner.navigate(card.currentAnnotation?.id));
         card.quote = element(this.doc, 'div', 'mn-quote');
         card.comment = element(this.doc, 'div', 'mn-comment');
         card.comment.tabIndex = 0;
-        card.comment.setAttribute('aria-label', this.owner.i18n.t('commentLabel'));
         card.error = element(this.doc, 'div', 'mn-error');
         card.error.hidden = true;
         card.editor = element(this.doc, 'div', 'mn-editor');
         card.input = element(this.doc, 'textarea', 'mn-input');
-        card.input.setAttribute('aria-label', this.owner.i18n.t('editorLabel'));
         card.input.addEventListener('input', () => this.updateDraft(card.currentAnnotation?.id, card.input.value));
         card.input.addEventListener('keydown', event => {
           if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
@@ -261,10 +258,10 @@
           }
         });
         const editorActions = element(this.doc, 'div', 'mn-editor-actions');
-        card.save = element(this.doc, 'button', 'mn-save', this.owner.i18n.t('save'));
+        card.save = element(this.doc, 'button', 'mn-save');
         card.save.type = 'button';
         card.save.addEventListener('click', () => this.saveEdit(card.currentAnnotation));
-        card.cancel = element(this.doc, 'button', 'mn-cancel', this.owner.i18n.t('cancel'));
+        card.cancel = element(this.doc, 'button', 'mn-cancel');
         card.cancel.type = 'button';
         card.cancel.addEventListener('click', () => this.cancelEdit(card.currentAnnotation?.id));
         editorActions.append(card.cancel, card.save);
@@ -455,7 +452,6 @@
         if (pageView?.viewport && box.right > box.left) pages.push({ index, box, pageView, div });
       }
       const used = new Set();
-      let crowded = 0;
       let noSpace = 0;
       this.lines.replaceChildren();
       for (const node of this.layer.querySelectorAll('.mn-overflow')) node.remove();
@@ -532,7 +528,6 @@
           line.setAttribute('fill', 'none');
           this.lines.append(line);
         }
-        crowded += result.hidden.length;
         if (result.overflow && result.hidden.length) {
           const button = element(this.doc, 'button', 'mn-overflow',
             this.owner.i18n.t('overflow', {
@@ -561,7 +556,6 @@
       }
       this.renderTray(traySpec);
       this.noSpace = noSpace;
-      this.crowded = crowded;
       this.owner.updateStatus();
     }
 
@@ -690,14 +684,16 @@
       this.lines.replaceChildren();
       for (const node of this.layer.querySelectorAll('.mn-overflow,.mn-tray')) node.remove();
       this.noSpace = 0;
-      this.crowded = 0;
       this.owner.updateStatus();
     }
 
     destroy() {
       this.destroyed = true;
       if (this.pending) this.win.cancelAnimationFrame(this.pending);
-      for (const cleanup of this.cleanups) { try { cleanup(); } catch (_) { /* frame already closed */ } }
+      for (const cleanup of this.cleanups) {
+        try { cleanup(); }
+        catch (error) { this.owner.report(error); }
+      }
       this.layer.remove();
       this.style.remove();
       this.cards.clear();
@@ -825,8 +821,7 @@
         inner?.toggleSidebar?.(true);
         inner?.setSidebarView?.('annotations');
         const payload = [id];
-        const target = this.reader._iframeWindow || this.reader._iframeWindow?.wrappedJSObject;
-        const ids = root.Cu?.cloneInto && target ? root.Cu.cloneInto(payload, target) : payload;
+        const ids = root.Cu.cloneInto(payload, this.reader._iframeWindow);
         inner?.setSelectedAnnotations?.(ids);
       } catch (error) {
         this.report(error);
@@ -849,8 +844,7 @@
       }
       try {
         const payload = [{ id, comment }];
-        const target = this.reader._iframeWindow || this.reader._iframeWindow?.wrappedJSObject;
-        const changes = root.Cu?.cloneInto && target ? root.Cu.cloneInto(payload, target) : payload;
+        const changes = root.Cu.cloneInto(payload, this.reader._iframeWindow);
         inner._annotationManager.updateAnnotations(changes);
         return { ok: true };
       } catch (error) {

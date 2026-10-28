@@ -34,7 +34,7 @@
 
 ## 빠른 시작
 
-1. [최신 릴리스](https://github.com/junhwan26/zotero-margin-notes/releases/latest)에서 `zotero-margin-notes-0.4.1.xpi`를 내려받습니다.
+1. [최신 릴리스](https://github.com/junhwan26/zotero-margin-notes/releases/latest)에서 `zotero-margin-notes-0.4.2.xpi`를 내려받습니다.
 2. Zotero에서 **Tools -> Plugins**를 엽니다.
 3. 톱니바퀴 메뉴에서 **Install Plugin From File...**을 누르고 XPI를 선택합니다.
 4. PDF를 열고 하이라이트·밑줄·메모 주석에 코멘트를 단 뒤, 리더 도구막대의 **Margin Notes** 또는 **여백 노트**를 사용합니다.
@@ -85,7 +85,9 @@
 
 Margin Notes는 필수로 설치해야 하는 다른 Zotero 플러그인이 없고, npm 런타임 패키지 의존성도 없습니다. 대상은 Zotero `9.0`부터 `10.0.*`까지이며, Zotero `9.0.6`과 `10.0.6` 실제 앱에서 검증했습니다. PDF 전용 플러그인이므로 EPUB와 웹 스냅샷에는 적용되지 않습니다.
 
-`0.4.1` 빌드는 2026-10-26 macOS에서 **Node 검사 49/49개**, **독립 Zotero 9.0.6 검사 292/292개**, **독립 Zotero 10.0.6 검사 309/309개**를 통과했습니다. 글자 크기를 유지하는 줄바꿈, 안전한 배치, 편집 초안·초점·선택 영역 보존과 기존 리더 동작을 확인했습니다. [0.4.1 공개 검사 요약](docs/evidence/compatibility-0.4.1.json)과 [호환성 기록](docs/compatibility.ko.md)에서 확인할 수 있습니다.
+`0.4.2`는 화면, 고정 글자 크기, 화면에 맞는 배치, 주석 저장 방식을 유지하면서 미사용 번역과 중복 작업을 정리합니다. 코멘트 전달 시 Zotero 창의 복제 절차를 반드시 사용하고, 종료 정리 오류는 기록하면서 나머지 정리를 계속합니다. 2026-10-28 독립된 macOS 프로필에서 **Node 검사 56/56개, Zotero 9.0.6 검사 294/294개, Zotero 10.0.6 검사 311/311개를 통과했습니다.** [공개 검사 요약과 파일 해시](docs/evidence/compatibility-0.4.2.json), [정리 보고서](docs/cleanup-0.4.2.md), [호환성 기록](docs/compatibility.ko.md)에서 범위를 확인할 수 있습니다.
+
+과거 `0.4.1` 빌드는 2026-10-26 macOS에서 **Node 검사 49/49개**, **독립 Zotero 9.0.6 검사 292/292개**, **독립 Zotero 10.0.6 검사 309/309개**를 통과했습니다. 글자 크기를 유지하는 줄바꿈, 안전한 배치, 편집 초안·초점·선택 영역 보존과 기존 리더 동작을 확인했습니다. [0.4.1 공개 검사 요약](docs/evidence/compatibility-0.4.1.json)과 [호환성 기록](docs/compatibility.ko.md)에서 확인할 수 있습니다.
 
 과거 `0.4.0` 검증은 2026-10-26 macOS에서 **Node 검사 44/44개**, **독립 Zotero 9.0.6 검사 271/271개**, **독립 Zotero 10.0.6 검사 288/288개**, 문법 검사, diff 검사, XPI 빌드를 통과했습니다. 당시 실제 앱 검사는 마크다운 표시·원본 편집, 사이드바 동기화, HTML·이미지·위험한 링크의 비활성 처리, 기존 서식과 코드가 섞인 코멘트, 기존 리더 동작을 확인했습니다. [0.4.0 공개 검사 요약](docs/evidence/compatibility-0.4.0.json)을 유지합니다. 아래 다른 플러그인 관찰도 과거 기록입니다.
 

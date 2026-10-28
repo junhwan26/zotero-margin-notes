@@ -2,13 +2,26 @@
 
 [한국어](compatibility.ko.md)
 
-**Checked on 2026-10-26 · Margin Notes 0.4.1 · Zotero 9.0.6 / 10.0.6 matrix · macOS**
+**Checked on 2026-10-28 · Margin Notes 0.4.2 · Zotero 9.0.6 / 10.0.6 matrix · macOS**
 
 Margin Notes declares support for Zotero 9.0 through 10.0.*. It does **not** require another Zotero add-on or an npm runtime package. The release XPI includes its implementation, and comments are stored in Zotero annotations.
 
-This report records dependency inspection and 0.4.1 validation in isolated macOS profiles. Earlier validation and installed-add-on observations are retained in clearly dated historical sections. An add-on being enabled alongside Margin Notes does not establish that all of its workflows have been tested.
+This report records dependency inspection and 0.4.2 validation in isolated macOS profiles. Earlier validation and installed-add-on observations are retained in clearly dated historical sections. An add-on being enabled alongside Margin Notes does not establish that all of its workflows have been tested.
 
-## 0.4.1 responsive-width checks
+## 0.4.2 cleanup checks
+
+The cleanup removes unused translations, unused crowding state, duplicate card-label writes, and repeated fenced-code expression construction. Comment saving and rich-editor selection use Zotero's reader-window cloning bridge directly; a missing or failed bridge is reported without dispatching a raw privileged array. Teardown records the original cleanup error and continues with later cleanup and overlay removal. UI, fixed font size, responsive placement, and stored annotation comments are unchanged. No dependency was added.
+
+| Check | 0.4.2 result | Scope |
+| --- | --- | --- |
+| Node test suite | **56 / 56 passed** | 20 layout, 18 Markdown, 12 lifecycle/bridge, and 6 localization tests. |
+| Native Zotero 9.0.6 regression suite | **294/294 passed** | Isolated macOS runtime, including teardown error reporting and continued cleanup. |
+| Native Zotero 10.0.6 regression suite | **311/311 passed** | Same suite plus controlled Reading Mode coverage. |
+| Release artifact | **SHA-256 recorded** | `zotero-margin-notes-0.4.2.xpi`: `a0d05f1a8bae8888989fed738d15ba2488a6226b62779700b95c18fe1b8a2b43`. |
+
+The [public 0.4.2 evidence](evidence/compatibility-0.4.2.json) records all 605 native check name/result pairs and the artifact hash without private paths, fixture text, or logs. The untouched 0.4.1 baseline passed 49 Node tests and 292/309 native checks before cleanup. The new bridge-failure test exposed an incorrectly reported save success before the raw-array path was removed. See the [cleanup report](cleanup-0.4.2.md) for fallback classifications, preserved compatibility boundaries, and quality gates.
+
+## Historical 0.4.1 responsive-width checks — 2026-10-26
 
 Margin Notes 0.4.1 uses the full available outer margin without increasing text size, fitting more words per line as space grows. Each annotation is measured at the actual left and right widths before placement, so unequal margins use the correct card heights. Responsive layout retains editor focus, selected editor text, and unsaved drafts. No dependency was added.
 
@@ -91,7 +104,7 @@ The native suite covers text-selection popups, highlighting, underlining, native
 
 ## Historical observations alongside other add-ons
 
-The local installed-add-on registry showed these versions on 2026-10-08 in the actual Zotero 10.0.6 UI with Margin Notes 0.3.1 active. These are **historical installed-state observations**, not complete integration-test results; these combinations were not retested for 0.4.0 or 0.4.1.
+The local installed-add-on registry showed these versions on 2026-10-08 in the actual Zotero 10.0.6 UI with Margin Notes 0.3.1 active. These are **historical installed-state observations**, not complete integration-test results; these combinations were not retested for 0.4.0, 0.4.1, or 0.4.2.
 
 | Add-on | Observed version | Observation | Required by Margin Notes? |
 | --- | --- | --- | --- |

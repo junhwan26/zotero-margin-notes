@@ -1046,8 +1046,25 @@ async function runSmoke(timers) {
     }
     await reader.navigate({ pageIndex: 0 });
     await native.runSelection('native text selection after sticky-note editing', 26);
-    smokeProduction.shutdown();
+    const shutdownFrame = controller.frames.get(view);
+    const teardownFailure = new Error('Injected margin note cleanup failure');
+    const teardownErrors = [];
+    let laterCleanupRan = false;
+    const teardownStyle = shutdownFrame.style;
+    shutdownFrame.cleanups.unshift(() => { throw teardownFailure; });
+    shutdownFrame.cleanups.push(() => { laterCleanupRan = true; });
+    const originalLogError = Zotero.logError;
+    try {
+      Zotero.logError = error => teardownErrors.push(error);
+      smokeProduction.shutdown();
+    } finally {
+      Zotero.logError = originalLogError;
+    }
     await settle();
+    check('shutdown records the original cleanup failure instead of hiding it',
+      teardownErrors.length === 1 && teardownErrors[0] === teardownFailure);
+    check('a failed cleanup does not prevent later cleanups or removal of its style',
+      laterCleanupRan && !teardownStyle.isConnected);
     check('shutdown removes card overlays', !doc.querySelector('.mn-layer'));
     check('shutdown removes reader toolbar', !reader._iframeWindow.document.querySelector('.mn-toolbar'));
     check('shutdown clears reader controllers', plugin.controllers.size === 0);

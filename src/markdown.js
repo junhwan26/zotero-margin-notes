@@ -239,10 +239,10 @@
       if (opening && !(opening[1][0] === "`" && opening[2].includes("`"))) {
         const marker = opening[1][0];
         const minimum = opening[1].length;
+        const closing = new RegExp("^ {0,3}" + marker + "{" + minimum + ",}[ \\t]*$");
         const content = [];
         i++;
         while (i < lines.length) {
-          const closing = new RegExp("^ {0,3}" + (marker === "`" ? "`" : "~") + "{" + minimum + ",}[ \\t]*$");
           if (closing.test(lines[i])) { i++; break; }
           content.push(lines[i++]);
         }

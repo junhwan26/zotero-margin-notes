@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.2 - 2026-10-28
+
+- Remove 28 unused translation entries, an unused crowding counter, and duplicate card-label initialization.
+- Clone comment updates and native-editor selection IDs into Zotero's reader window; report failure instead of passing raw privileged arrays when the bridge is unavailable.
+- Record teardown errors while allowing later cleanup and overlay removal to continue.
+- Construct each fenced-code closing expression once per fence without changing Markdown output.
+- Add translation/bridge failure contracts and native teardown-failure regressions; retain the existing UI, font size, responsive layout, and annotation storage.
+
 ## 0.4.1 - 2026-10-26
 
 - Use the full available outer margin for note cards while keeping the text size unchanged, so wider windows fit more words per line.
