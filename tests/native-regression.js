@@ -49,7 +49,7 @@
       const tip = Cc['@mozilla.org/text-input-processor;1'].createInstance(Ci.nsITextInputProcessor);
       if (!tip.beginInputTransactionForTests(target)) throw new Error('Cannot start trusted keyboard input');
       const definitions = {
-        Meta: ['MetaLeft', 224], Control: ['ControlLeft', 17], Shift: ['ShiftLeft', 16],
+        Meta: ['MetaLeft', 224], Control: ['ControlLeft', 17], Shift: ['ShiftLeft', 16], Alt: ['AltLeft', 18],
         Escape: ['Escape', 27], Delete: ['Delete', 46], Backspace: ['Backspace', 8],
         Enter: ['Enter', 13], F2: ['F2', 113],
         ArrowRight: ['ArrowRight', 39], ArrowLeft: ['ArrowLeft', 37],
@@ -362,7 +362,7 @@
       await dismissSelection();
     }
 
-    return { runCore, runFocusTransitions, runSelection, dragText, diagnostics, clickElement, doubleClick, pressKey };
+    return { runCore, runFocusTransitions, runSelection, dragText, diagnostics, clickElement, doubleClick, pressKey, selectAnnotation: annotationAt, dismissSelection };
   }
 
   root.NativeRegression = { create };

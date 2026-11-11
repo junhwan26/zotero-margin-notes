@@ -15,6 +15,12 @@ import time
 import zipfile
 
 ROOT = Path(__file__).resolve().parent.parent
+# Every file the production bootstrap loads, packed under production/.
+PRODUCTION = ('bootstrap.js', 'src/i18n.js', 'src/settings.js', 'src/style.js', 'src/layout.js',
+              'src/markdown.js', 'src/math.js', 'src/reader.js', 'src/overlay.js',
+              'prefs/preferences.xhtml', 'vendor/katex.min.js')
+# Zotero loads these from the add-on root before invoking its bootstrap.
+ROOT_ASSETS = ('prefs.js', 'locale/en-US/margin-notes.ftl', 'locale/ko-KR/margin-notes.ftl')
 
 
 def make_pdf(path):
@@ -56,7 +62,7 @@ def main():
     args = parser.parse_args()
     if not Path(args.app).is_file():
         parser.error(f'Zotero executable not found: {args.app}')
-    for name in ('bootstrap.js', 'src/i18n.js', 'src/layout.js', 'src/markdown.js', 'src/overlay.js', 'tests/runtime-harness.js', 'tests/native-regression.js'):
+    for name in PRODUCTION + ROOT_ASSETS + ('tests/runtime-harness.js', 'tests/native-regression.js'):
         if not (ROOT / name).is_file():
             parser.error(f'Required build input is missing: {name}')
     temp = Path(tempfile.mkdtemp(prefix='zotero-margin-smoke-'))
@@ -95,17 +101,17 @@ def main():
     (profile / 'user.js').write_text(''.join(f'user_pref({json.dumps(k)}, {json.dumps(v)});\n' for k, v in prefs.items()))
     manifest = json.loads((ROOT / 'manifest.json').read_text())
     manifest['name'] = 'Margin Notes isolated runtime smoke harness'
-    manifest['applications']['zotero']['id'] = 'margin-notes-runtime-smoke@local'
-    addon = profile / 'extensions/margin-notes-runtime-smoke@local.xpi'
+    # Keep the production ID so Zotero can resolve its preference pane and icon.
+    # The separate -no-remote profile contains no user add-ons.
+    addon = profile / 'extensions' / (manifest['applications']['zotero']['id'] + '.xpi')
     with zipfile.ZipFile(addon, 'w', zipfile.ZIP_DEFLATED) as archive:
         archive.writestr('manifest.json', json.dumps(manifest))
         archive.write(ROOT / 'tests/runtime-harness.js', 'bootstrap.js')
         archive.write(ROOT / 'tests/native-regression.js', 'native-regression.js')
-        archive.write(ROOT / 'bootstrap.js', 'production/bootstrap.js')
-        archive.write(ROOT / 'src/i18n.js', 'production/src/i18n.js')
-        archive.write(ROOT / 'src/layout.js', 'production/src/layout.js')
-        archive.write(ROOT / 'src/markdown.js', 'production/src/markdown.js')
-        archive.write(ROOT / 'src/overlay.js', 'production/src/overlay.js')
+        for name in ROOT_ASSETS:
+            archive.write(ROOT / name, name)
+        for name in PRODUCTION:
+            archive.write(ROOT / name, 'production/' + name)
     command = [args.app, '-no-remote', '-profile', str(profile), '-ZoteroDebugText']
     if not args.visible:
         command.append('-headless')

@@ -11,6 +11,33 @@
   const MAX_FORMATTED_LENGTH = 200000;
   const punctuation = /[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/;
   const text = value => ({ type: "text", value });
+  // Formula syntax is opt-in per parse, so a comment such as "$5 or $10"
+  // keeps its exact text wherever math rendering is off or unavailable.
+  let mathMode = false;
+
+  // $$display$$ may span lines. Inline $math$ follows the common rule that the
+  // delimiters hug the formula and a closing "$" is not followed by a digit.
+  function mathAt(source, start, budget) {
+    const display = source[start + 1] === "$";
+    const open = display ? 2 : 1;
+    const first = source[start + open];
+    if (!first || (!display && (/\s/.test(first) || first === "$"))) return null;
+    for (let i = start + open; i < source.length; i++) {
+      if (--budget.remaining < 0) return null;
+      const character = source[i];
+      if (character === "\\") { i++; continue; }
+      if (!display && character === "\n") return null;
+      if (character !== "$") continue;
+      if (display) {
+        if (source[i + 1] !== "$") continue;
+        const value = source.slice(start + 2, i).trim();
+        return value ? { value, display: true, end: i + 2 } : null;
+      }
+      if (/\s/.test(source[i - 1]) || /\d/.test(source[i + 1] || "")) return null;
+      return { value: source.slice(start + 1, i), display: false, end: i + 1 };
+    }
+    return null;
+  }
 
   function safeURL(value) {
     if (typeof value !== "string" || !value || /[\s\u0000-\u001f\u007f-\u009f<>\\]/.test(value)) return null;
@@ -124,6 +151,15 @@
         continue;
       }
       if (character === "\n") { nodes.push({ type: "break" }); cursor++; continue; }
+      if (character === "$") {
+        const match = mathMode ? mathAt(source, cursor, budget) : null;
+        if (match) {
+          nodes.push({ type: "math", value: match.value, display: match.display, source: source.slice(cursor, match.end) });
+          cursor = match.end;
+          continue;
+        }
+        pushText(nodes, character); cursor++; continue;
+      }
       if (character === "`") {
         const marker = /^`+/.exec(source.slice(cursor))[0];
         let close = cursor + marker.length;
@@ -189,7 +225,7 @@
       }
       // Consume ordinary text in one chunk, avoiding per-character concatenation.
       const begin = cursor++;
-      while (cursor < source.length && !/[\\\n`[!<*_~]/.test(source[cursor])) cursor++;
+      while (cursor < source.length && !/[\\\n`[!<*_~$]/.test(source[cursor])) cursor++;
       pushText(nodes, source.slice(begin, cursor));
     }
     return nodes;
@@ -324,11 +360,13 @@
     return result;
   }
 
-  function parse(source) {
+  function parse(source, options = {}) {
     const value = String(source == null ? "" : source).replace(/\r\n?/g, "\n");
     if (!value) return [];
     if (value.length > MAX_FORMATTED_LENGTH) return [{ type: "paragraph", children: [text(value)] }];
-    return blocks(value.split("\n"));
+    mathMode = !!options.math;
+    try { return blocks(value.split("\n")); }
+    finally { mathMode = false; }
   }
 
   function hasRichText(source, inlineOnly = false) {
@@ -355,6 +393,19 @@
       if (node.type === "text" || node.type === "html") {
         const value = node.type === "text" && typeof options.decodeText === "function" ? options.decodeText(node.value) : node.value;
         parent.appendChild(doc.createTextNode(value));
+        continue;
+      }
+      if (node.type === "math") {
+        // The host supplies the formula renderer; without one, or for a formula
+        // it rejects, the comment shows the TeX exactly as written.
+        const rendered = typeof options.renderMath === "function" ? options.renderMath(node.value, node.display) : null;
+        if (rendered) parent.appendChild(rendered);
+        else {
+          const fallback = doc.createElement("code");
+          fallback.className = "mn-math-source";
+          fallback.textContent = node.source;
+          parent.appendChild(fallback);
+        }
         continue;
       }
       if (node.type === "table") {
@@ -415,7 +466,7 @@
 
   function render(doc, source, options = {}) {
     const fragment = doc.createDocumentFragment();
-    append(doc, fragment, parse(source), options);
+    append(doc, fragment, parse(source, { math: typeof options.renderMath === "function" }), options);
     return fragment;
   }
 

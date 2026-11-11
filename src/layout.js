@@ -36,13 +36,13 @@
 
   // Each lane stays outside every neighboring page for its whole visible height.
   // This conservative boundary also handles facing-page mode without obscuring text.
-  function makeLanes(page, bounds, obstacles, minWidth, maxWidth, gap, padding) {
+  function makeLanes(page, bounds, obstacles, minWidth, maxWidth, gap, padding, sides) {
     const top = Math.max(page.top, bounds.top + padding);
     const bottom = Math.min(page.bottom, bounds.bottom - padding);
     const lanes = { left: null, right: null };
     if (bottom <= top) return lanes;
 
-    for (const side of SIDES) {
+    for (const side of sides) {
       let left = side === "left" ? bounds.left + padding
         : Math.max(bounds.left + padding, page.right + gap);
       let right = side === "left" ? Math.min(bounds.right - padding, page.left - gap)
@@ -174,8 +174,10 @@
           && SIDES.some(side => finite(heights[side]) && heights[side] > 0),
       };
     }).sort((a, b) => a.valid && b.valid ? compareNotes(a, b) : Number(b.valid) - Number(a.valid));
+    // A reader may pin notes to one margin; anything else keeps both candidates.
+    const sides = SIDES.includes(options.side) ? [options.side] : SIDES;
     const lanes = makeLanes(page, options.bounds,
-      Array.isArray(options.obstacles) ? options.obstacles : [], minWidth, maxWidth, gap, padding);
+      Array.isArray(options.obstacles) ? options.obstacles : [], minWidth, maxWidth, gap, padding, sides);
     let result = distribute(notes, lanes, page, gap);
     let overflow = null;
 

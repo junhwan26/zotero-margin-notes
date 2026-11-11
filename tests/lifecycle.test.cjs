@@ -23,9 +23,9 @@ function runtime(enabled = true) {
     clearInterval(fn) { intervals.delete(fn); },
   };
   vm.createContext(sandbox);
-  vm.runInContext(fs.readFileSync(path.join(root, 'src/i18n.js'), 'utf8'), sandbox);
-  vm.runInContext(fs.readFileSync(path.join(root, 'src/markdown.js'), 'utf8'), sandbox);
-  vm.runInContext(fs.readFileSync(path.join(root, 'src/overlay.js'), 'utf8'), sandbox);
+  for (const name of ['i18n', 'settings', 'style', 'markdown', 'math', 'reader', 'overlay']) {
+    vm.runInContext(fs.readFileSync(path.join(root, `src/${name}.js`), 'utf8'), sandbox);
+  }
   return { plugin: sandbox.MarginNotes, sandbox, listeners, intervals, prefs };
 }
 
@@ -204,6 +204,102 @@ test('unavailable reader bridges fail visibly without passing raw privileged arr
   }
 });
 
+test('a reader without the internal annotation manager saves through the item API', async () => {
+  const r = commentRuntime(payload => JSON.parse(JSON.stringify(payload)));
+  delete r.reader._internalReader._annotationManager;
+  r.reader.itemID = 7;
+  const saved = [];
+  let rejectSave = false;
+  const item = { isAnnotation: () => true,
+    saveTx() { saved.push(this.annotationComment); return rejectSave ? Promise.reject(new Error('disk full')) : Promise.resolve(); } };
+  r.sandbox.Zotero.Items = {
+    get: id => ({ libraryID: id === 7 ? 3 : -1 }),
+    getByLibraryAndKey: (libraryID, key) => libraryID === 3 && key === 'A' ? item : null,
+  };
+  assert.equal(r.controller.updateComment('A', 'before', 'after').ok, true);
+  assert.deepEqual(saved, ['after']);
+  assert.equal(r.errors.length, 0);
+  rejectSave = true;
+  assert.equal(r.controller.updateComment('A', 'before', 'again').ok, true);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(r.errors.length, 1, 'A late save failure must be reported');
+  r.sandbox.Zotero.Items.getByLibraryAndKey = () => null;
+  const missing = r.controller.updateComment('A', 'before', 'lost');
+  assert.equal(missing.ok, false);
+  assert.equal(missing.message, 'Could not save');
+  r.plugin.stop();
+});
+
+test('Alt+M toggles notes but leaves text fields and other chords alone', () => {
+  const r = runtime();
+  r.plugin.start();
+  const press = (overrides = {}, editable = false) => {
+    const event = { code: 'KeyM', altKey: true, prevented: false, stopped: false,
+      target: { closest: () => editable ? {} : null },
+      preventDefault() { this.prevented = true; }, stopPropagation() { this.stopped = true; }, ...overrides };
+    r.plugin.handleShortcut(event);
+    return event;
+  };
+  assert.equal(press().prevented, true);
+  assert.equal(r.plugin.enabled, false);
+  assert.equal(r.prefs.get('extensions.margin-notes.enabled'), false);
+  for (const ignored of [press({}, true), press({ metaKey: true }), press({ ctrlKey: true }),
+    press({ shiftKey: true }), press({ altKey: false }), press({ code: 'KeyN' })]) {
+    assert.equal(ignored.prevented, false);
+    assert.equal(ignored.stopped, false);
+  }
+  assert.equal(r.plugin.enabled, false);
+  r.prefs.set('extensions.margin-notes.shortcut', false);
+  r.plugin.applySettings();
+  assert.equal(press().prevented, false);
+  assert.equal(r.plugin.enabled, false);
+  r.plugin.stop();
+});
+
+test('settings changes reach open readers and item notifications refresh them', () => {
+  const r = runtime();
+  const timeouts = [];
+  let observer;
+  let released;
+  r.sandbox.setTimeout = fn => { timeouts.push(fn); return timeouts.length; };
+  r.sandbox.clearTimeout = () => {};
+  r.sandbox.Zotero.Notifier = {
+    registerObserver(target, types, id) { observer = { target, types, id }; return 'notifier-id'; },
+    unregisterObserver(id) { released = id; },
+  };
+  const reader = { type: 'pdf' };
+  r.sandbox.Zotero.Reader._readers.push(reader);
+  r.plugin.start();
+  assert.deepEqual([...observer.types], ['item']);
+  const controller = r.plugin.controllers.get(reader);
+  let applied = 0;
+  controller.frames.set({}, { applySettings() { applied++; }, destroy() {} });
+  r.prefs.set('extensions.margin-notes.fontSize', 16);
+  r.plugin.applySettings();
+  assert.equal(r.plugin.config.fontSize, 16);
+  assert.equal(applied, 1);
+  let synced = 0;
+  controller.sync = () => { synced++; };
+  observer.target.notify();
+  observer.target.notify();
+  assert.equal(timeouts.length, 1, 'Bursts of notifications share one refresh');
+  timeouts[0]();
+  assert.equal(synced, 1);
+  r.plugin.stop();
+  assert.equal(released, 'notifier-id');
+});
+
+test('the packaged XPI and the runtime harness ship every file the bootstrap loads', () => {
+  const bootstrap = fs.readFileSync(path.join(root, 'bootstrap.js'), 'utf8');
+  const names = /for \(const name of \[([^\]]+)\]\)/.exec(bootstrap)[1].match(/\w+/g);
+  const loaded = names.map(name => `src/${name}.js`).concat('vendor/katex.min.js', 'prefs/preferences.xhtml');
+  for (const script of ['scripts/build.py', 'scripts/runtime-smoke.py']) {
+    const source = fs.readFileSync(path.join(root, script), 'utf8');
+    for (const file of loaded) assert.ok(source.includes(`'${file}'`), `${script} must pack ${file}`);
+  }
+  for (const file of loaded) assert.ok(fs.existsSync(path.join(root, file)), file);
+});
+
 test('shutdown cancels startup that is awaiting Zotero initialization', async () => {
   let resolveInitialization;
   const sandbox = {
@@ -271,4 +367,36 @@ test('layout export follows the loadSubScript target rather than a different glo
   loader.call(target);
   assert.equal(typeof target.MarginNotesLayout?.layoutPage, 'function');
   assert.equal(context.MarginNotesLayout, undefined);
+});
+
+
+test('late preference pane registration cannot outlive shutdown or replace a restarted pane', async () => {
+  for (const restart of [false, true]) {
+    const r = runtime();
+    const pending = [];
+    const panes = new Set();
+    r.sandbox.MarginNotesRoot = 'file:///isolated-plugin/';
+    r.sandbox.Zotero.PreferencePanes = {
+      register: () => new Promise(resolve => pending.push(id => { panes.add(id); resolve(id); })),
+      unregister: id => panes.delete(id),
+    };
+    const flushRegistration = () => new Promise(resolve => setImmediate(resolve));
+    r.plugin.start();
+    assert.equal(pending.length, 1);
+    r.plugin.stop();
+    if (restart) {
+      r.plugin.start();
+      pending[1]('current-pane');
+      await flushRegistration();
+      assert.equal(r.plugin.pane, 'current-pane');
+    }
+    pending[0]('obsolete-pane');
+    await flushRegistration();
+    assert.deepEqual([...panes], restart ? ['current-pane'] : [],
+      'A registration completed after shutdown must unregister its own pane');
+    assert.equal(r.plugin.pane ?? null, restart ? 'current-pane' : null,
+      'An old startup cannot replace the active pane handle');
+    r.plugin.stop();
+    assert.equal(panes.size, 0);
+  }
 });

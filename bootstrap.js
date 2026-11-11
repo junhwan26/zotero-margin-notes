@@ -9,12 +9,19 @@ async function startup(data) {
   if (marginNotesStarting !== token) return;
   const timers = ChromeUtils.importESModule('resource://gre/modules/Timer.sys.mjs');
   const root = data.rootURI || data.resourceURI.spec;
-  const scope = { Zotero, Services, Cu, ...timers };
+  const scope = { Zotero, Services, Cu, ...timers, MarginNotesRoot: root, MarginNotesVendor: {} };
   marginNotesScope = scope;
-  Services.scriptloader.loadSubScript(root + 'src/i18n.js', scope);
-  Services.scriptloader.loadSubScript(root + 'src/layout.js', scope);
-  Services.scriptloader.loadSubScript(root + 'src/markdown.js', scope);
-  Services.scriptloader.loadSubScript(root + 'src/overlay.js', scope);
+  // KaTeX is optional: if it cannot load, formulas stay visible as TeX source.
+  try {
+    // Its UMD wrapper exports to `self`, which resolves to this holder object.
+    scope.MarginNotesVendor.self = scope.MarginNotesVendor;
+    Services.scriptloader.loadSubScript(root + 'vendor/katex.min.js', scope.MarginNotesVendor);
+  } catch (error) {
+    Zotero.debug('Margin Notes: formula rendering unavailable: ' + error);
+  }
+  for (const name of ['i18n', 'settings', 'style', 'layout', 'markdown', 'math', 'reader', 'overlay']) {
+    Services.scriptloader.loadSubScript(root + 'src/' + name + '.js', scope);
+  }
   scope.MarginNotes.start();
 }
 

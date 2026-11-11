@@ -1,0 +1,11 @@
+pref("extensions.margin-notes.enabled", true);
+pref("extensions.margin-notes.fontSize", 13);
+pref("extensions.margin-notes.maxWidth", 0);
+pref("extensions.margin-notes.side", "auto");
+pref("extensions.margin-notes.surface", "paper");
+pref("extensions.margin-notes.quote", true);
+pref("extensions.margin-notes.connectors", true);
+pref("extensions.margin-notes.expand", false);
+pref("extensions.margin-notes.math", true);
+pref("extensions.margin-notes.addOnSelect", true);
+pref("extensions.margin-notes.shortcut", true);

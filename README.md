@@ -29,12 +29,15 @@
 | Markdown comments | Formats headings, emphasis, lists, tables, code, and links in margin cards and overflow comments while keeping the original Markdown editable. |
 | Two-column placement | Chooses the left or right outer margin from annotation coordinates, available room, and nearby card congestion. |
 | Responsive card width | Uses the available outer margin at the same text size, fitting more words per line as the window grows. |
+| Add notes in the margin | Select a highlight that has no comment yet and write one from its margin card. |
+| Formulas | Renders `$…$` and `$$…$$` as math with a bundled KaTeX; anything it cannot parse stays visible as TeX. |
+| Settings | Text size, card width, margin side, card color, quotes, connector lines, and more under **Settings -> Margin Notes**. |
 | Zotero 10 Reading Mode safety | Suspends margin notes per reader pane while Zotero Reading Mode is active, then resumes when the pane returns to PDF view. |
 | Zotero workflow preservation | Keeps text selection, selection popups, annotation tools, keyboard selection, search, zoom, page navigation, deletion, undo/redo, and sidebar edits working. |
 
 ## Quick Start
 
-1. Download `zotero-margin-notes-0.4.2.xpi` from the [latest release](https://github.com/junhwan26/zotero-margin-notes/releases/latest).
+1. Download `zotero-margin-notes-0.5.0.xpi` from the [latest release](https://github.com/junhwan26/zotero-margin-notes/releases/latest).
 2. In Zotero, open **Tools -> Plugins**.
 3. Open the gear menu, choose **Install Plugin From File...**, and select the XPI.
 4. Open a PDF, add a comment to a highlight, underline, or note annotation, then use **Margin Notes** in the reader toolbar.
@@ -50,18 +53,36 @@ The `0.1.0` build used a placeholder update URL. Install `0.2.0` or later manual
 
 | Action | Gesture |
 | --- | --- |
-| Toggle margin notes | Click **Margin Notes** in the Zotero PDF reader toolbar. |
+| Toggle margin notes | Click **Margin Notes** in the Zotero PDF reader toolbar, or press **Alt+M** (**⌥M** on macOS). |
+| Add a comment | Select a highlight, underline, or note without a comment, then click **+ Add a note** on its card. |
 | Make room for notes | Click **Fit Notes** when the window is too narrow; hidden Reading Mode PDF panes are ignored. |
 | Edit plain text or Markdown | Double-click a margin note or overflow comment. |
 | Keyboard edit | Focus the comment with Tab, then press **Enter** or **F2**. |
-| Save or cancel | Use **Save** or **Cancel** in the inline editor. |
+| Save or cancel | Use **Save** or **Cancel** in the inline editor, or **Ctrl/⌘+Enter** and **Esc**. |
 | Open the source annotation | Click the page link in a note header. |
 
-Saving an empty comment removes that card from the margin view because the plugin displays annotations that contain comments. Double-clicking inside an active editor keeps normal word selection. Comments containing rich text delegate to Zotero's native editor instead of flattening formatting.
+Saving an empty comment removes that card from the margin view: the plugin displays annotations that contain comments, plus the selected annotation so you can add one. Double-clicking inside an active editor keeps normal word selection. Comments containing rich text delegate to Zotero's native editor instead of flattening formatting.
 
-White notes and editors remain readable in both PDF themes. Comments are saved in Zotero annotations. English is the default interface language; Korean Zotero locales select Korean automatically.
+Notes are white in both PDF themes by default; **Settings -> Margin Notes -> Card color** can match the PDF theme or stay dark. Comments are saved in Zotero annotations. English is the default interface language; Korean Zotero locales select Korean automatically.
 
 Cards expand into the available outer margin without enlarging the text. Each side is measured at its actual width, so wider notes fit more words per line while placement keeps clear of the PDF and neighboring cards. Resizing preserves unsaved editor drafts, focus, and selected editor text.
+
+## Settings
+
+Open Zotero's **Settings** and choose **Margin Notes**. Changes apply to open PDFs immediately.
+
+| Setting | Default | Options |
+| --- | --- | --- |
+| Text size | 13 px | 11–18 px |
+| Maximum card width | Whole margin | 160–520 px |
+| Margin | Nearest side | Left only, right only |
+| Card color | Always white | Match the PDF theme, always dark |
+| Highlighted text above the comment | On | Off |
+| Line from note to annotation | On | Off |
+| Long comments | Scroll inside the card | Show in full |
+| Add a note from a selected annotation | On | Off |
+| Formulas | On | Off |
+| Alt+M shortcut | On | Off |
 
 ## Markdown Comments
 
@@ -79,25 +100,20 @@ Write Markdown in an annotation comment to see it formatted in the margin card a
 
 Double-click a comment to edit its original Markdown, then save to return to the formatted view. Edits in Zotero's annotation sidebar and margin notes use the same comment and stay in sync. Existing rich-text comments still open Zotero's native editor.
 
-Task markers, blockquotes, and tables are also supported. Links with safe URLs open outside the PDF reader. Arbitrary raw HTML is not executed, and image syntax remains literal text. Existing Zotero rich-text tags receive compatible display conversion and still use Zotero's native editor; HTML inside Markdown code stays literal. This is a compact Markdown subset; full CommonMark and mathematical notation are not supported.
+Task markers, blockquotes, and tables are also supported. Links with safe URLs open outside the PDF reader. Arbitrary raw HTML is not executed, and image syntax remains literal text. Existing Zotero rich-text tags receive compatible display conversion and still use Zotero's native editor; HTML inside Markdown code stays literal. This is a compact Markdown subset; full CommonMark is not supported.
+
+Formulas use TeX between dollar signs: `$E = mc^2$` inline, `$$\sum_i x_i$$` on its own line. A dollar sign followed by a space or a closing one followed by a digit stays ordinary text, so `$5 or $10` is not a formula. Formulas are drawn as MathML by a bundled [KaTeX](https://katex.org/) 0.16.22 (MIT); no fonts or network access are involved.
 
 ## Compatibility
 
-Margin Notes has no required third-party Zotero add-on and no npm runtime package dependency. It targets Zotero `9.0` through `10.0.*`, with native validation on Zotero `9.0.6` and `10.0.6`. The plugin is PDF-only; EPUB and web snapshots are ignored.
+Margin Notes has no required third-party Zotero add-on and no npm package dependency; KaTeX is bundled in the XPI. It targets Zotero `9.0` through `10.0.*`. The plugin is PDF-only; EPUB and web snapshots are ignored.
 
-The `0.4.2` cleanup preserves the UI, fixed text size, responsive layout, and annotation storage. It removes unused translations and duplicate work, requires Zotero's reader-window cloning bridge for comment updates, and records teardown errors while continuing cleanup. **56/56 Node tests, 294/294 Zotero 9.0.6 checks, and 311/311 Zotero 10.0.6 checks passed** in isolated macOS profiles on 2026-10-28. See the [public evidence and artifact hash](docs/evidence/compatibility-0.4.2.json), [cleanup report](docs/cleanup-0.4.2.md), and [compatibility notes](docs/compatibility.md).
+| Version | Node tests | Zotero 9.0.6 | Zotero 10.0.6 | Zotero 10.0.9 |
+| --- | --- | --- | --- | --- |
+| `0.5.0` | 74/74 passed | 324/324 passed | 341/341 passed | 340/340 passed |
+| `0.4.2` | 56/56 passed | 294/294 passed | 311/311 passed | — |
 
-Historical `0.4.1` validation passed **49/49 Node tests**, **292/292 isolated Zotero 9.0.6 checks**, and **309/309 isolated Zotero 10.0.6 checks** on macOS on 2026-10-26. The runs cover responsive wrapping at unchanged text size, placement safety, editor draft/focus/selection preservation, and the existing reader suite. See the [0.4.1 public evidence](docs/evidence/compatibility-0.4.1.json) and [compatibility notes](docs/compatibility.md).
-
-Historical `0.4.0` validation passed **44/44 Node tests**, **271/271 isolated Zotero 9.0.6 checks**, **288/288 isolated Zotero 10.0.6 checks**, syntax checks, diff checks, and the XPI build on macOS on 2026-10-26. Those runs covered Markdown display/raw editing, sidebar synchronization, inert HTML/images/unsafe links, mixed native-rich/code comments, and the existing reader behavior suite. The [0.4.0 public evidence](docs/evidence/compatibility-0.4.0.json) remains available. Named third-party add-on observations below remain historical.
-
-The `0.3.1` release expands the display scope from highlights and underlines to Zotero note annotations. Note annotations do not have a selected-text quote, so their margin cards hide the quote area and show the annotation comment.
-
-Historical `0.3.1` validation: that build passed 26 Node tests, update metadata verification, syntax checks, diff checks, a reproducible build, 246/246 native checks on Zotero `9.0.6`, and 263/263 native checks on Zotero `10.0.6`. The 0.3.1 XPI and the copy installed during that check shared SHA-256 `9648934bc1566ac7557bd6701ec54288c786a6ec02aa2752e749ecfc7db6922f`. Its local Zotero 10.0.6 UI check showed Margin Notes 0.3.1 enabled, and page 7 of an actual PDF with existing native note annotations exposed two note cards through accessibility. These observations describe 0.3.1. Read the [compatibility notes](docs/compatibility.md) and [public 0.3.1 evidence](docs/evidence/compatibility-0.3.1.json) for the dependency audit, check inventory, and observed add-on state.
-
-Historical `0.3.0` evidence remains available in the [public 0.3.0 evidence snapshot](docs/evidence/compatibility-0.3.0.json).
-
-Historical `0.2.3` evidence remains available: it passed [218 native Zotero 9.0.6 runtime checks](https://github.com/junhwan26/zotero-margin-notes/actions/runs/37580613959) and 23 Node tests. The 2026-10-07 installed-add-on observation with Better BibTeX, Translate for Zotero, Ethereal Style, Research Vault Bridge, and disabled ZotMoov is a Zotero 9.0.6-era local observation, not a Zotero 10 integration certification.
+`0.5.0` adds settings, formulas, adding notes from the margin, and a refreshed card design. Its native regression suite passed 340/340 checks on macOS with Zotero `10.0.9` on 2026-11-11, preserving all 310 baseline checks and adding 30 checks for the new features. GitHub CI then passed the same suite on Zotero `9.0.6` (324/324) and `10.0.6` (341/341); Zotero 10-only checks such as Reading Mode are skipped on 9.0.6. Per-version results, artifact hashes, and the dependency audit are in the [compatibility record](docs/compatibility.md) and [`docs/evidence`](docs/evidence).
 
 ## Support
 
@@ -110,7 +126,7 @@ The README structure was informed by public Zotero plugin documentation from [Zo
 <details>
 <summary>Development</summary>
 
-This repository has no npm runtime dependencies. Development uses Node.js for unit tests and syntax checks, and Python 3 for the reproducible XPI build.
+This repository has no npm dependencies. KaTeX is vendored as `vendor/katex.min.js` and loaded only for formula rendering; every use of Zotero's unpublished reader internals is isolated in `src/reader.js`. Development uses Node.js for unit tests and syntax checks, and Python 3 for the reproducible XPI build.
 
 ```sh
 npm test
