@@ -103,8 +103,12 @@ async function runSmoke(timers) {
       });
       check('the native settings pane loads all eleven production preference controls',
         preferencesDoc.querySelectorAll('[preference^="extensions.margin-notes."]').length === 11);
+      // Zotero binds preference values after the controls exist; wait for that
+      // binding instead of reading the input while it is still empty.
+      const fontSizeInput = preferencesDoc.querySelector('[preference="extensions.margin-notes.fontSize"]');
+      await waitFor('settings pane font size binding', () => fontSizeInput.value !== '', 5000).catch(() => {});
       check('the native settings pane reads the shipped default font size',
-        preferencesDoc.querySelector('[preference="extensions.margin-notes.fontSize"]').value === '13');
+        fontSizeInput.value === '13', { value: fontSizeInput.value });
       const localizedHeading = await preferencesDoc.l10n.formatValue('margin-notes-display');
       await waitFor('Margin Notes settings Fluent localization', () =>
         preferencesDoc.querySelector('[data-l10n-id="margin-notes-display"]')?.textContent === localizedHeading);
