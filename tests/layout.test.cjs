@@ -260,3 +260,21 @@ test("seeded random layouts preserve visibility, geometry and collision invarian
     assert.deepEqual(result, layoutPage(input));
   }
 });
+
+test("a pinned side places every note there and a width cap narrows the cards", () => {
+  for (const side of ["left", "right"]) {
+    const input = { page, bounds, side, maxWidth: 180,
+      notes: [note("near-left", 300, 100), note("near-right", 820, 200), note("middle", 560, 400)] };
+    const result = layoutPage(input);
+    verify(result, input);
+    assert.equal(result.lanes[side === "left" ? "right" : "left"], null);
+    assert.equal(result.placements.length, 3);
+    for (const placement of result.placements) {
+      assert.equal(placement.side, side);
+      assert.equal(placement.width, 180);
+    }
+  }
+  const automatic = layoutPage({ page, bounds, side: "sideways",
+    notes: [note("near-left", 300, 100), note("near-right", 820, 200)] });
+  assert.deepEqual(automatic.placements.map(item => item.side).sort(), ["left", "right"]);
+});

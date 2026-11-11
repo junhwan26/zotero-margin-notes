@@ -1,0 +1,59 @@
+<linkset>
+  <html:link rel="localization" href="margin-notes.ftl"/>
+</linkset>
+<vbox xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+      xmlns:html="http://www.w3.org/1999/xhtml">
+  <groupbox>
+    <label><html:h2 data-l10n-id="margin-notes-display">Display</html:h2></label>
+    <checkbox preference="extensions.margin-notes.enabled" native="true"
+              data-l10n-id="margin-notes-enabled" label="Show margin notes in the PDF reader"/>
+    <checkbox preference="extensions.margin-notes.quote" native="true"
+              data-l10n-id="margin-notes-quote" label="Show the highlighted text above each comment"/>
+    <checkbox preference="extensions.margin-notes.connectors" native="true"
+              data-l10n-id="margin-notes-connectors" label="Draw a line from each note to its annotation"/>
+    <checkbox preference="extensions.margin-notes.expand" native="true"
+              data-l10n-id="margin-notes-expand" label="Show long comments in full instead of scrolling inside the card"/>
+    <hbox align="center">
+      <label data-l10n-id="margin-notes-surface" value="Card color"/>
+      <menulist preference="extensions.margin-notes.surface" native="true">
+        <menupopup>
+          <menuitem value="paper" data-l10n-id="margin-notes-surface-paper" label="Always white"/>
+          <menuitem value="auto" data-l10n-id="margin-notes-surface-auto" label="Match the PDF theme"/>
+          <menuitem value="dark" data-l10n-id="margin-notes-surface-dark" label="Always dark"/>
+        </menupopup>
+      </menulist>
+    </hbox>
+    <hbox align="center">
+      <label data-l10n-id="margin-notes-font-size" value="Text size (11–18 px)"/>
+      <html:input type="number" min="11" max="18" step="1" style="width: 5em;"
+                  preference="extensions.margin-notes.fontSize"/>
+    </hbox>
+  </groupbox>
+  <groupbox>
+    <label><html:h2 data-l10n-id="margin-notes-placement">Placement</html:h2></label>
+    <hbox align="center">
+      <label data-l10n-id="margin-notes-side" value="Margin"/>
+      <menulist preference="extensions.margin-notes.side" native="true">
+        <menupopup>
+          <menuitem value="auto" data-l10n-id="margin-notes-side-auto" label="Nearest side (automatic)"/>
+          <menuitem value="left" data-l10n-id="margin-notes-side-left" label="Left only"/>
+          <menuitem value="right" data-l10n-id="margin-notes-side-right" label="Right only"/>
+        </menupopup>
+      </menulist>
+    </hbox>
+    <hbox align="center">
+      <label data-l10n-id="margin-notes-max-width" value="Maximum card width (160–520 px, 0 = use the whole margin)"/>
+      <html:input type="number" min="0" max="520" step="10" style="width: 6em;"
+                  preference="extensions.margin-notes.maxWidth"/>
+    </hbox>
+  </groupbox>
+  <groupbox>
+    <label><html:h2 data-l10n-id="margin-notes-writing">Writing</html:h2></label>
+    <checkbox preference="extensions.margin-notes.addOnSelect" native="true"
+              data-l10n-id="margin-notes-add-on-select" label="Offer “Add a note” when an annotation without a comment is selected"/>
+    <checkbox preference="extensions.margin-notes.math" native="true"
+              data-l10n-id="margin-notes-math" label="Render $…$ and $$…$$ as formulas"/>
+    <checkbox preference="extensions.margin-notes.shortcut" native="true"
+              data-l10n-id="margin-notes-shortcut" label="Toggle margin notes with Alt+M (⌥M on macOS)"/>
+  </groupbox>
+</vbox>

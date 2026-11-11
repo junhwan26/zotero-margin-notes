@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.0 - Unreleased
+
+- Add a comment from the margin: selecting a highlight, underline, or note without a comment shows a card with **+ Add a note**.
+- Add a **Margin Notes** pane in Zotero's settings for text size, maximum card width, margin side, card color, quotes, connector lines, full-length comments, formulas, and the shortcut. Changes apply to open PDFs immediately.
+- Render `$…$` and `$$…$$` as formulas through a bundled KaTeX 0.16.22 emitting MathML. The formula is rebuilt from allowlisted MathML elements, and anything KaTeX rejects stays visible as TeX.
+- Toggle margin notes with Alt+M (⌥M on macOS) from the PDF or the reader toolbar.
+- Refresh the design: rounder cards with the color bar facing the page, a color dot and page label in the header, softer connector lines ending in a dot, an accented Save button with a keyboard hint, a pill-shaped overflow badge, icon toolbar buttons, and an optional dark card surface. White cards remain the default in both PDF themes.
+- Re-read the reader state on pointer and key release and on Zotero item notifications, so selection and comment changes appear without waiting for the 400 ms poll, which remains as a fallback.
+- Move every use of Zotero's unpublished reader internals into `src/reader.js`; if the internal annotation manager is missing, comments are saved through `Zotero.Items`.
+- Split styles, settings, formulas, and the reader adapter out of `src/overlay.js`, and share one editor implementation between cards and the overflow list.
+- Validate 340/340 native checks on Zotero 10.0.9 for macOS, including 30 new settings, formulas, add-note, and shortcut checks; all 310 baseline checks remain intact. Node tests pass 74/74.
+- Release stale settings-pane registrations that finish after shutdown or a newer startup.
+
 ## 0.4.2 - 2026-10-28
 
 - Remove 28 unused translation entries, an unused crowding counter, and duplicate card-label initialization.

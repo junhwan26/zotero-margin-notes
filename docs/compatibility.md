@@ -8,6 +8,18 @@ Margin Notes declares support for Zotero 9.0 through 10.0.*. It does **not** req
 
 This report records dependency inspection and 0.4.2 validation in isolated macOS profiles. Earlier validation and installed-add-on observations are retained in clearly dated historical sections. An add-on being enabled alongside Margin Notes does not establish that all of its workflows have been tested.
 
+## 0.5.0 local validation — 2026-11-11
+
+Margin Notes 0.5.0 adds a settings pane, formula rendering through a bundled KaTeX 0.16.22 (`vendor/katex.min.js`, MIT, MathML output only), adding a comment from the margin card of a selected annotation, a refreshed card design, and an adapter (`src/reader.js`) that holds every use of Zotero's unpublished reader internals.
+
+| Check | 0.5.0 result | Scope |
+| --- | --- | --- |
+| Node test suite | **74 / 74 passed** | 21 layout, 18 Markdown, 7 formula, 5 settings, 17 lifecycle/bridge, and 6 localization tests. |
+| Native Zotero 9.0.6 regression suite | **Not run yet** | Run `npm run test:native` against Zotero 9.0.6 before release. |
+| Native Zotero 10.0.6 regression suite | **Not run yet** | Run `npm run test:native` against Zotero 10.0.6 before release. |
+
+The native suite passed **340 / 340** checks on macOS with **Zotero 10.0.9**, using an isolated profile and synthetic PDF. All 310 baseline checks remain intact; 30 additional checks cover adding a note and SQLite persistence, valid/invalid formulas, live settings, white default cards in both themes, trusted Alt+M including textarea exclusion, and native settings-pane loading/localization/lifecycle. The [public 0.5.0 evidence](evidence/compatibility-0.5.0.json) lists all 340 check results and the artifact hash, `zotero-margin-notes-0.5.0.xpi`: `b9e0806da7fb16a65c3371b268dd37b4dfd8fd2d4da717a6b70ac4daceb4075e`. Syntax checks and the local XPI build passed. A unit regression reproduced stale asynchronous pane registration after shutdown/restart; the production fix now releases obsolete registrations. No user-profile modification, user installation, commit, or publication was performed. The older-version runs above are still pending for 0.5.0; the sections below record historical results.
+
 ## 0.4.2 cleanup checks
 
 The cleanup removes unused translations, unused crowding state, duplicate card-label writes, and repeated fenced-code expression construction. Comment saving and rich-editor selection use Zotero's reader-window cloning bridge directly; a missing or failed bridge is reported without dispatching a raw privileged array. Teardown records the original cleanup error and continues with later cleanup and overlay removal. UI, fixed font size, responsive placement, and stored annotation comments are unchanged. No dependency was added.

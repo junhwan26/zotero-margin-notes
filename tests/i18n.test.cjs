@@ -71,8 +71,10 @@ test("count placeholders preserve zero and remove missing values in both languag
   assert.equal(korean.t("overflow", { count: 2 }), "코멘트 2개 더 보기");
   assert.equal(english.t("noSpace", { count: 0 }), "No margin (0)");
   assert.equal(korean.t("noSpace", { count: 0 }), "여백 부족 (0)");
-  assert.equal(english.t("openLabel"), "p.  · Comment ↗");
-  assert.equal(korean.t("openLabel"), "p.  · 코멘트 ↗");
+  assert.equal(english.t("openLabel", { page: 3 }), "p. 3");
+  assert.equal(korean.t("openLabel"), "p. ");
+  assert.equal(english.t("editorHint", { key: "Ctrl+" }), "Ctrl+Enter to save · Esc to cancel");
+  assert.equal(korean.t("editorHint", { key: "⌘" }), "⌘Enter 저장 · Esc 취소");
 });
 
 test("missing translations fall back to English and unknown keys remain readable", () => {

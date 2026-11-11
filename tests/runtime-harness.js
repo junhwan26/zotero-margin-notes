@@ -87,9 +87,36 @@ async function runSmoke(timers) {
     const korean = localized('ko-KR');
     check('English is the default language and fallback', english.t('toggle') === 'Margin Notes' && localized('fr-FR').t('save') === 'Save');
     check('Korean localization includes editing controls', korean.t('toggle') === '여백 노트' && korean.t('save') === '저장' && korean.t('cancel') === '취소');
+    await mark('checking the registered 0.5 settings pane');
+    const registeredPanes = () => Zotero.PreferencePanes.pluginPanes.filter(pane => pane.pluginID === 'margin-notes@local');
+    const initialPane = await waitFor('initial settings pane registration', () =>
+      plugin.pane && registeredPanes().find(pane => pane.id === plugin.pane));
+    check('Margin Notes registers one native settings pane with its label and production source',
+      registeredPanes().length === 1 && initialPane.rawLabel === plugin.i18n.t('toggle') &&
+      initialPane.src === smokeRoot + 'production/prefs/preferences.xhtml', initialPane);
+    let preferencesWindow;
+    try {
+      preferencesWindow = Zotero.Utilities.Internal.openPreferences(initialPane.id);
+      const preferencesDoc = await waitFor('native Margin Notes preferences controls', () => {
+        const candidate = preferencesWindow.document;
+        return candidate?.querySelector('[preference="extensions.margin-notes.fontSize"]') && candidate;
+      });
+      check('the native settings pane loads all eleven production preference controls',
+        preferencesDoc.querySelectorAll('[preference^="extensions.margin-notes."]').length === 11);
+      check('the native settings pane reads the shipped default font size',
+        preferencesDoc.querySelector('[preference="extensions.margin-notes.fontSize"]').value === '13');
+      const localizedHeading = await preferencesDoc.l10n.formatValue('margin-notes-display');
+      await waitFor('Margin Notes settings Fluent localization', () =>
+        preferencesDoc.querySelector('[data-l10n-id="margin-notes-display"]')?.textContent === localizedHeading);
+      check('the native settings pane resolves its bundled Fluent resource',
+        !!localizedHeading && localizedHeading !== 'margin-notes-display');
+    } finally {
+      preferencesWindow?.close();
+    }
     // Open the fixture with no plugin hooks or overlay so the same trusted UI
     // operations establish native behavior before the plugin touches this reader.
     plugin.stop();
+    check('stopping Margin Notes unregisters its initial settings pane', registeredPanes().length === 0);
     const attachment = await Zotero.Attachments.importFromFile({ file: PathUtils.join(directory, 'two-column.pdf'), libraryID: Zotero.Libraries.userLibraryID });
     const createAnnotation = async (comment, x, y, pageIndex = 0, type = 'highlight') => {
       const item = new Zotero.Item('annotation');
@@ -131,6 +158,9 @@ async function runSmoke(timers) {
     await native.runCore('native baseline without plugin');
     const originalTextFocusedGuard = view._textAnnotationFocused;
     plugin.start();
+    await waitFor('settings pane after restarting the production plugin', () =>
+      plugin.pane && registeredPanes().some(pane => pane.id === plugin.pane));
+    check('restarting Margin Notes registers one settings pane without duplicates', registeredPanes().length === 1);
     const controller = await waitFor('plugin reader controller', () => plugin.controllers.get(reader));
     const overlay = await waitFor('primary overlay frame', () => controller.frames.get(view));
     const doc = pdfWindow.document;
@@ -267,6 +297,192 @@ async function runSmoke(timers) {
       end: editor.selectionEnd,
       text: editor.value.slice(editor.selectionStart, editor.selectionEnd),
     });
+    await mark('checking 0.5 add-note, formulas, live settings, and shortcut');
+    const preferenceKeys = ['enabled', 'fontSize', 'side', 'surface', 'quote', 'connectors', 'shortcut', 'math', 'addOnSelect'];
+    const preferenceSnapshot = preferenceKeys.map(key => {
+      const name = 'extensions.margin-notes.' + key;
+      const type = Services.prefs.getPrefType(name);
+      const value = type === Services.prefs.PREF_BOOL ? Services.prefs.getBoolPref(name) :
+        type === Services.prefs.PREF_INT ? Services.prefs.getIntPref(name) : Services.prefs.getStringPref(name);
+      return { name, type, value, user: Services.prefs.prefHasUserValue(name) };
+    });
+    const setPreference = (key, value) => {
+      const name = 'extensions.margin-notes.' + key;
+      if (typeof value === 'boolean') Services.prefs.setBoolPref(name, value);
+      else if (typeof value === 'number') Services.prefs.setIntPref(name, value);
+      else Services.prefs.setStringPref(name, value);
+    };
+    const formulaOriginal = currentAnnotation(lowerLeft.key).comment;
+    const formulaSource = 'Valid $x^2$ and invalid $\\oops{$';
+    const savedTheme = internal._state.colorScheme;
+    try {
+      check('shipped preferences default to automatic placement and white cards',
+        Services.prefs.getStringPref('extensions.margin-notes.side') === 'auto' &&
+        Services.prefs.getStringPref('extensions.margin-notes.surface') === 'paper');
+      let trustedSelection = false;
+      const recordSelection = event => { if (event.isTrusted) trustedSelection = true; };
+      pdfWindow.addEventListener('mouseup', recordSelection, true);
+      try { await native.selectAnnotation(currentAnnotation(blank.key), '0.5 blank highlight'); }
+      finally { pdfWindow.removeEventListener('mouseup', recordSelection, true); }
+      const addButton = await waitFor('selected blank highlight Add a note card', () => {
+        const button = card(blank.key)?.querySelector('.mn-add');
+        return button && !button.hidden && rectangle(button).height > 0 &&
+          pdfWindow.getComputedStyle(button).display !== 'none' && button;
+      });
+      check('trusted selection of a comment-free highlight shows its visible Add a note card',
+        trustedSelection && internal._state.selectedAnnotationIDs.includes(blank.key) &&
+        !card(blank.key).querySelector('.mn-comment').textContent.trim());
+      await native.clickElement(addButton);
+      const addEditor = await waitFor('Add a note opens an empty margin editor', () => visibleInput(blank.key));
+      check('the Add a note card opens a focused empty textarea with a trusted click',
+        addEditor.value === '' && doc.activeElement?.isSameNode(addEditor));
+      const addedComment = 'ADDED FROM BLANK: raw < text & 한글 $x^2$';
+      typeDraft(blank.key, addedComment);
+      await native.clickElement(card(blank.key).querySelector('.mn-save'));
+      await waitFor('new margin comment reaches the native annotation', () => currentAnnotation(blank.key)?.comment === addedComment);
+      await waitForPersistedComment(blank, addedComment);
+      check('the Add a note card saves its exact comment to native state, SQLite, and item cache',
+        Zotero.Items.get(blank.id).annotationComment === addedComment &&
+        await Zotero.DB.valueQueryAsync('SELECT comment FROM itemAnnotations WHERE itemID = ?', [blank.id]) === addedComment);
+      await native.dismissSelection();
+      internal._annotationManager.updateAnnotations(Cu.cloneInto([{ id: blank.key, comment: '' }], reader._iframeWindow));
+      await waitForPersistedComment(blank, '');
+      await waitFor('unselected blank highlight card is removed again', () =>
+        !internal._state.selectedAnnotationIDs.includes(blank.key) && !card(blank.key));
+      check('an unselected highlight without a comment stays omitted after the add-note check', true);
+
+      internal._annotationManager.updateAnnotations(Cu.cloneInto([{ id: lowerLeft.key, comment: formulaSource }], reader._iframeWindow));
+      await waitForPersistedComment(lowerLeft, formulaSource);
+      const mathNode = await waitFor('native formula comment MathML', () =>
+        card(lowerLeft.key)?.querySelector('.mn-comment math'));
+      check('formula comments render x squared as namespaced MathML in the actual reader',
+        mathNode.namespaceURI === 'http://www.w3.org/1998/Math/MathML' &&
+        mathNode.querySelector('msup')?.textContent === 'x2');
+      const malformedSource = await waitFor('invalid formula retains its source', () =>
+        card(lowerLeft.key)?.querySelector('.mn-math-source'));
+      check('invalid formulas display their exact delimited TeX source', malformedSource.textContent === '$\\oops{$');
+      check('formula rendering preserves the exact raw comment in native state and SQLite',
+        currentAnnotation(lowerLeft.key).comment === formulaSource &&
+        await Zotero.DB.valueQueryAsync('SELECT comment FROM itemAnnotations WHERE itemID = ?', [lowerLeft.id]) === formulaSource);
+      internal._annotationManager.updateAnnotations(Cu.cloneInto([{ id: lowerLeft.key, comment: formulaOriginal }], reader._iframeWindow));
+      await waitFor('original formula fixture comment restored', () =>
+        card(lowerLeft.key)?.querySelector('.mn-comment')?.textContent === formulaOriginal);
+      await waitForPersistedComment(lowerLeft, formulaOriginal);
+
+      // Mutate only Zotero's real preference store. No manual plugin refresh is
+      // allowed here: the registered observers must update this existing reader.
+      setPreference('fontSize', 16);
+      await waitFor('font-size preference updates existing margin text', () =>
+        pdfWindow.getComputedStyle(card(right.key).querySelector('.mn-comment')).fontSize === '16px');
+      check('fontSize preference immediately changes computed text size in the open reader', true);
+      setPreference('fontSize', 13);
+      await waitFor('font-size preference restored in existing margin text', () =>
+        pdfWindow.getComputedStyle(card(right.key).querySelector('.mn-comment')).fontSize === '13px');
+      for (const side of ['left', 'right']) {
+        setPreference('side', side);
+        await waitFor(side + '-only preference updates existing cards', () =>
+          card(left.key)?.dataset.side === side && card(right.key)?.dataset.side === side);
+        const pageBox = rectangle(doc.querySelector('.page'));
+        check(side + '-only preference moves both columns to the requested outer margin',
+          [left, right].every(item => side === 'left' ?
+            rectangle(card(item.key)).right <= pageBox.left + 1 : rectangle(card(item.key)).left >= pageBox.right - 1));
+      }
+      setPreference('side', 'auto');
+      await waitFor('automatic side preference restores nearest-column placement', () =>
+        card(left.key)?.dataset.side === 'left' && card(right.key)?.dataset.side === 'right');
+      check('automatic side preference restores the nearest outer margin for both columns', true);
+      setPreference('surface', 'dark');
+      await waitFor('dark surface preference updates existing cards', () => {
+        const background = parseColor(pdfWindow.getComputedStyle(card(right.key)).backgroundColor);
+        return overlay.layer.dataset.surface === 'dark' && background.a >= .99 && background.r < 80;
+      });
+      check('dark surface preference changes the computed color of an existing card', true);
+      setPreference('surface', 'paper');
+      for (const theme of ['light', 'dark']) {
+        internal.setColorScheme(theme);
+        await waitFor('white card surface in the actual ' + theme + ' PDF theme', () => {
+          const background = parseColor(pdfWindow.getComputedStyle(card(right.key)).backgroundColor);
+          return overlay.layer.dataset.theme === theme && overlay.layer.dataset.surface === 'paper' &&
+            background.a >= .99 && background.r >= 250 && background.g >= 250 && background.b >= 250;
+        });
+        check('default paper cards stay opaque white in the actual ' + theme + ' PDF theme', true);
+      }
+      internal.setColorScheme(savedTheme);
+      for (const value of [false, true]) {
+        setPreference('quote', value);
+        await waitFor('quote preference ' + value + ' reaches rendered text', () =>
+          (pdfWindow.getComputedStyle(card(right.key).querySelector('.mn-quote')).display !== 'none') === value);
+        check('quote preference ' + value + ' immediately changes highlighted-text visibility', true);
+        setPreference('connectors', value);
+        await waitFor('connector preference ' + value + ' reaches rendered lines', () =>
+          (pdfWindow.getComputedStyle(overlay.lines).display !== 'none') === value);
+        check('connectors preference ' + value + ' immediately changes connector visibility',
+          !value || overlay.lines.querySelectorAll('path').length > 0);
+      }
+
+      await native.dismissSelection();
+      doc.activeElement?.blur();
+      pdfWindow.focus();
+      let shortcutTrusted = false;
+      const recordShortcut = event => {
+        if (event.code === 'KeyM') shortcutTrusted = event.isTrusted && event.altKey;
+      };
+      pdfWindow.addEventListener('keydown', recordShortcut, true);
+      try { await native.pressKey(pdfWindow, 'm', ['Alt']); }
+      finally { pdfWindow.removeEventListener('keydown', recordShortcut, true); }
+      await waitFor('Alt+M disables notes in the actual PDF reader', () =>
+        !plugin.enabled && overlay.layer.hidden && readerDoc.querySelector('.mn-toggle').getAttribute('aria-pressed') === 'false');
+      check('trusted Alt+M in the PDF disables notes and updates the toolbar',
+        shortcutTrusted && !Services.prefs.getBoolPref('extensions.margin-notes.enabled'));
+      await native.pressKey(pdfWindow, 'm', ['Alt']);
+      await waitFor('Alt+M enables notes in the actual PDF reader', () =>
+        plugin.enabled && !overlay.layer.hidden && card(right.key));
+      check('a second trusted Alt+M in the PDF restores margin notes',
+        Services.prefs.getBoolPref('extensions.margin-notes.enabled'));
+      const toolbarToggle = readerDoc.querySelector('.mn-toggle');
+      toolbarToggle.focus();
+      await native.pressKey(readerWindow, 'm', ['Alt']);
+      await waitFor('Alt+M from the reader toolbar disables notes', () => !plugin.enabled && overlay.layer.hidden);
+      check('Alt+M also toggles from the native reader toolbar', true);
+      await native.pressKey(readerWindow, 'm', ['Alt']);
+      await waitFor('toolbar Alt+M restores margin cards', () => plugin.enabled && card(right.key));
+      await beginEdit(right.key);
+      const shortcutDraft = 'SHORTCUT DRAFT: preserve this exact text';
+      const shortcutEditor = typeDraft(right.key, shortcutDraft);
+      shortcutEditor.focus();
+      shortcutEditor.setSelectionRange(9, 14);
+      let textareaShortcut;
+      const recordTextareaShortcut = event => {
+        if (event.code === 'KeyM') textareaShortcut = event;
+      };
+      pdfWindow.addEventListener('keydown', recordTextareaShortcut, true);
+      try { await native.pressKey(pdfWindow, 'm', ['Alt']); }
+      finally { pdfWindow.removeEventListener('keydown', recordTextareaShortcut, true); }
+      // Option+M may insert a native character on macOS. The plugin must leave
+      // that text input alone rather than freezing the draft or its selection.
+      check('Alt+M inside a textarea leaves trusted native input unhandled and notes enabled',
+        plugin.enabled && Services.prefs.getBoolPref('extensions.margin-notes.enabled') &&
+        textareaShortcut?.isTrusted && textareaShortcut.altKey && !textareaShortcut.defaultPrevented &&
+        doc.activeElement?.isSameNode(shortcutEditor));
+      await native.clickElement(card(right.key).querySelector('.mn-cancel'));
+    } finally {
+      if (visibleInput(right.key)) card(right.key).querySelector('.mn-cancel').click();
+      internal.setColorScheme(savedTheme);
+      internal._annotationManager.updateAnnotations(Cu.cloneInto([
+        { id: blank.key, comment: '' }, { id: lowerLeft.key, comment: formulaOriginal },
+      ], reader._iframeWindow));
+      await waitForPersistedComment(blank, '');
+      await waitForPersistedComment(lowerLeft, formulaOriginal);
+      await native.dismissSelection();
+      for (const saved of preferenceSnapshot) {
+        if (!saved.user) Services.prefs.clearUserPref(saved.name);
+        else if (saved.type === Services.prefs.PREF_BOOL) Services.prefs.setBoolPref(saved.name, saved.value);
+        else if (saved.type === Services.prefs.PREF_INT) Services.prefs.setIntPref(saved.name, saved.value);
+        else Services.prefs.setStringPref(saved.name, saved.value);
+      }
+      await waitFor('original notes restored after 0.5 native checks', () =>
+        card(left.key) && card(right.key) && !card(blank.key));
+    }
     check('margin notes expose no Edit buttons', !overlay.layer.querySelector('.mn-edit'));
     checkWhiteNoteSurface('margin note card', card(right.key));
     checkSelectionPalette('card comment', card(right.key).querySelector('.mn-comment'));
@@ -1065,6 +1281,7 @@ async function runSmoke(timers) {
       teardownErrors.length === 1 && teardownErrors[0] === teardownFailure);
     check('a failed cleanup does not prevent later cleanups or removal of its style',
       laterCleanupRan && !teardownStyle.isConnected);
+    check('shutdown unregisters the current native settings pane', registeredPanes().length === 0);
     check('shutdown removes card overlays', !doc.querySelector('.mn-layer'));
     check('shutdown removes reader toolbar', !reader._iframeWindow.document.querySelector('.mn-toolbar'));
     check('shutdown clears reader controllers', plugin.controllers.size === 0);

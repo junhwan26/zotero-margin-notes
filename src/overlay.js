@@ -3,100 +3,36 @@
   'use strict';
 
   const ID = 'margin-notes@local';
-  const PREF = 'extensions.margin-notes.enabled';
-  const STYLE = `
-    .mn-layer { position:fixed; inset:0; z-index:5; pointer-events:none;
-      overflow:hidden; font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      color:#25272b; --mn-bg:#fff; --mn-border:#cbd0d6; --mn-muted:#5f6368; }
-    .mn-layer [hidden] { display:none!important; }
-    .mn-lines { position:absolute; inset:0; width:100%; height:100%; overflow:hidden; }
-    .mn-card { position:absolute; box-sizing:border-box; pointer-events:auto;
-      background:var(--mn-bg); border:1px solid var(--mn-border);
-      border-left:3px solid var(--mn-color,#e4bd5a); border-radius:3px 9px 9px 3px;
-      box-shadow:0 3px 10px #00000024; padding:0; overflow:hidden; }
-    .mn-card.mn-selected { outline:2px solid var(--mn-color,#b58d34); outline-offset:2px; }
-    .mn-card button, .mn-overflow, .mn-tray button, .mn-editor textarea {
-      font:inherit; color:inherit; }
-    .mn-open { border:0; background:transparent; display:flex; width:100%;
-      align-items:center; justify-content:space-between; gap:8px; text-align:left;
-      padding:8px 10px 5px; cursor:pointer; font-size:11px!important; color:var(--mn-muted)!important; }
-    .mn-open:hover { background:#88888812; }
-    .mn-editor { padding:0 8px 8px; display:flex; flex-direction:column; gap:6px; }
-    .mn-editor textarea { width:100%; min-height:72px; max-height:140px; resize:none;
-      box-sizing:border-box; background:var(--mn-bg); border:1px solid var(--mn-border);
-      border-radius:4px; padding:6px; color:inherit; }
-    /* Zotero's PDF viewer makes selection backgrounds transparent globally.
-       Notes contain real text, so restore readable selection colors here. */
-    .mn-layer textarea::selection, .mn-layer .mn-comment::selection,
-    .mn-layer .mn-comment *::selection, .mn-layer .mn-quote::selection {
-      color:#172b4d; background-color:#b4d6ff; }
-    .mn-layer[data-theme="dark"] textarea::selection,
-    .mn-layer[data-theme="dark"] .mn-comment::selection,
-    .mn-layer[data-theme="dark"] .mn-comment *::selection,
-    .mn-layer[data-theme="dark"] .mn-quote::selection {
-      color:#fff; background-color:#365d8a; }
-    .mn-editor-actions { display:flex; gap:5px; justify-content:flex-end; }
-    .mn-editor-actions button { border:1px solid var(--mn-border); border-radius:4px;
-      background:#8888880d; padding:2px 7px; cursor:pointer; font-size:11px!important; }
-    .mn-error { color:#a44435; font-size:11px; line-height:1.35; padding:0 10px 8px; }
-    .mn-open:focus-visible, .mn-overflow:focus-visible, .mn-tray button:focus-visible,
-    .mn-editor button:focus-visible,
-    .mn-editor textarea:focus-visible, .mn-comment:focus-visible,
-    .mn-comment a:focus-visible { outline:2px solid #538bd5; outline-offset:-2px; }
-    .mn-quote { margin:0 10px 6px; opacity:.68; font-size:11px; line-height:1.4;
-      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
-      overflow-wrap:anywhere; }
-    .mn-comment { padding:0 10px 10px; white-space:normal; overflow-wrap:anywhere;
-      overflow-y:auto; max-height:148px; box-sizing:border-box; scrollbar-width:thin; }
-    .mn-comment p { margin:0 0 .55em; }
-    .mn-comment > :last-child { margin-bottom:0; }
-    .mn-comment h1, .mn-comment h2, .mn-comment h3, .mn-comment h4,
-    .mn-comment h5, .mn-comment h6 { margin:.6em 0 .3em; line-height:1.3; font-weight:700; }
-    .mn-comment > :first-child { margin-top:0; }
-    .mn-comment h1 { font-size:1.4em; }
-    .mn-comment h2 { font-size:1.25em; }
-    .mn-comment h3 { font-size:1.1em; }
-    .mn-comment h4, .mn-comment h5, .mn-comment h6 { font-size:1em; }
-    .mn-comment ul, .mn-comment ol { margin:.35em 0 .55em; padding-left:1.5em; }
-    .mn-comment ul { list-style:disc outside; }
-    .mn-comment ol { list-style:decimal outside; }
-    .mn-comment li { margin:.15em 0; }
-    .mn-comment li > p { margin:0; }
-    .mn-comment .mn-task-item { list-style:none; }
-    .mn-comment .mn-task-item > p:first-of-type { display:inline; }
-    .mn-comment blockquote { margin:.45em 0; padding-left:.65em;
-      border-left:3px solid #bac1ca; color:#505762; }
-    .mn-comment code { font: .92em/1.45 ui-monospace,SFMono-Regular,Consolas,monospace;
-      white-space:pre-wrap; background:#eef0f3; padding:.1em .25em; border-radius:3px; }
-    .mn-comment pre { margin:.5em 0; padding:7px; background:#eef0f3;
-      border-radius:4px; white-space:pre; overflow:auto; max-height:120px; }
-    .mn-comment pre code { white-space:pre; padding:0; background:none; }
-    .mn-comment a { color:#175db1; text-decoration:underline; cursor:pointer; }
-    .mn-comment hr { border:0; border-top:1px solid var(--mn-border); margin:.6em 0; }
-    .mn-comment table { border-collapse:collapse; font-size:.92em; margin:.5em 0; }
-    .mn-comment th, .mn-comment td { border:1px solid var(--mn-border); padding:3px 5px; }
-    .mn-overflow { position:absolute; pointer-events:auto; border:1px solid var(--mn-border);
-      border-radius:6px; background:var(--mn-bg); font-size:12px; cursor:pointer; }
-    .mn-tray { position:absolute; pointer-events:auto; background:var(--mn-bg);
-      border:1px solid var(--mn-border); border-radius:8px; box-shadow:0 4px 16px #0003;
-      box-sizing:border-box; display:flex; flex-direction:column; overflow:hidden; }
-    .mn-tray-heading { padding:9px; display:flex; justify-content:space-between; align-items:center; }
-    .mn-tray-heading button { background:none; border:0; cursor:pointer; }
-    .mn-tray-list { overflow:auto; padding:0 8px 8px; }
-    .mn-tray-row { border-top:1px solid var(--mn-border); padding:7px 0; }
-    .mn-open-tray { display:block; width:100%; text-align:left; border:0;
-      padding:3px; background:none; cursor:pointer; font-size:11px!important;
-      color:var(--mn-muted)!important; }
-    .mn-tray-row .mn-comment { padding:3px; }
-    .mn-tray-row .mn-editor { padding:4px 3px 0; }
-    @media print { .mn-layer { display:none!important; } }
-  `;
+  const SVG = 'http://www.w3.org/2000/svg';
+  const Reader = root.MarginNotesReader;
 
   function element(doc, tag, className, text) {
     const node = doc.createElement(tag);
     if (className) node.className = className;
     if (text !== undefined) node.textContent = text;
     return node;
+  }
+
+  function button(doc, className, text) {
+    const node = element(doc, 'button', className, text);
+    node.type = 'button';
+    return node;
+  }
+
+  function icon(doc, paths) {
+    const svg = doc.createElementNS(SVG, 'svg');
+    svg.setAttribute('viewBox', '0 0 16 16');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.style.cssText = 'width:14px;height:14px;flex:none;';
+    const path = doc.createElementNS(SVG, 'path');
+    path.setAttribute('d', paths);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke-width', '1.3');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    svg.append(path);
+    return svg;
   }
 
   // Parse rich comments in an inert document; never put annotation HTML in the live DOM.
@@ -154,35 +90,20 @@
       this.destroyed = false;
       this.pending = 0;
       this.trayPage = null;
+      // Bumped when a setting changes how a stored comment is displayed.
+      this.epoch = 0;
       this.style = element(this.doc, 'style');
-      this.style.textContent = STYLE;
+      this.style.textContent = root.MarginNotesStyle.LAYER;
       this.doc.head.append(this.style);
       this.layer = element(this.doc, 'div', 'mn-layer');
       this.layer.setAttribute('aria-label', this.owner.i18n.t('layerLabel'));
-      this.lines = this.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      this.lines = this.doc.createElementNS(SVG, 'svg');
       this.lines.classList.add('mn-lines');
       this.lines.setAttribute('aria-hidden', 'true');
       this.layer.append(this.lines);
       this.doc.body.append(this.layer);
-      // PDFView listens to keydown in window capture, before card handlers.
-      // Extend its existing text-focus exemption so reading/copying a comment
-      // cannot delete, resize, or undo a selected Zotero annotation.
-      const originalFocusGuard = view._textAnnotationFocused;
-      if (typeof originalFocusGuard === 'function') {
-        const layer = this.layer;
-        const focusGuard = function () {
-          return layer.contains(layer.ownerDocument.activeElement) || originalFocusGuard.call(view);
-        };
-        // PDFView runs in the reader's content compartment. Export the hook and
-        // call the original without a privileged argument array: Function.apply
-        // in content cannot read that array's length, breaking native drag/keys.
-        view._textAnnotationFocused = root.Cu.exportFunction(focusGuard, view);
-        // Read back through the same wrapper used by cleanup for identity checks.
-        const installedGuard = view._textAnnotationFocused;
-        this.cleanups.push(() => {
-          if (view._textAnnotationFocused === installedGuard) view._textAnnotationFocused = originalFocusGuard;
-        });
-      }
+      const releaseGuard = Reader.guardTextFocus(view, this.layer);
+      if (releaseGuard) this.cleanups.push(releaseGuard);
       const schedule = () => this.schedule();
       const container = this.doc.getElementById('viewerContainer');
       this.container = container;
@@ -200,6 +121,30 @@
         observer.observe(container);
         this.cleanups.push(() => observer.disconnect());
       }
+      // Selecting or creating an annotation ends with one of these events, so
+      // the reader state is re-read right away instead of at the next poll.
+      const refresh = () => this.owner.app.refreshSoon();
+      for (const type of ['pointerup', 'keyup']) {
+        win.addEventListener(type, refresh, { capture: true, passive: true });
+        this.cleanups.push(() => win.removeEventListener(type, refresh, { capture: true }));
+      }
+      const shortcut = event => this.owner.app.handleShortcut(event);
+      win.addEventListener('keydown', shortcut, true);
+      this.cleanups.push(() => win.removeEventListener('keydown', shortcut, true));
+      this.applySettings();
+      this.schedule();
+    }
+
+    applySettings() {
+      const config = this.owner.app.config;
+      this.layer.style.setProperty('--mn-font-size', `${config.fontSize}px`);
+      this.layer.dataset.quote = config.quote ? 'on' : 'off';
+      this.layer.dataset.connectors = config.connectors ? 'on' : 'off';
+      this.layer.dataset.expand = config.expand ? 'on' : 'off';
+      if (this.math !== config.math) {
+        this.math = config.math;
+        this.epoch++;
+      }
       this.schedule();
     }
 
@@ -213,12 +158,7 @@
     }
 
     snapshot() {
-      const state = this.owner.reader._internalReader?._state;
-      const annotations = state?.annotations;
-      const selected = state?.selectedAnnotationIDs;
-      const show = state?.showAnnotations;
-      const theme = state?.colorScheme;
-      const readOnly = !!(state?.readOnly || this.owner.reader._internalReader?._readOnly);
+      const { annotations, selected, show, theme, readOnly } = Reader.snapshot(this.owner.reader);
       if (this.annotations !== annotations || this.selected !== selected ||
         this.show !== show || this.theme !== theme || this.readOnly !== readOnly) {
         this.annotations = annotations;
@@ -230,6 +170,55 @@
       }
     }
 
+    hasComment(annotation) {
+      return !!annotation.comment && !!plainText(this.doc, annotation.comment);
+    }
+
+    // A selected highlight without a comment gets a card that offers to add one.
+    canAddComment(annotation) {
+      return this.owner.app.config.addOnSelect && !this.owner.isReadOnly() && !annotation.readOnly &&
+        (this.selected || []).includes(annotation.id);
+    }
+
+    // One editor implementation serves both margin cards and overflow rows.
+    makeEditor(getAnnotation) {
+      const i18n = this.owner.i18n;
+      const editor = element(this.doc, 'div', 'mn-editor');
+      const input = element(this.doc, 'textarea', 'mn-input');
+      input.setAttribute('aria-label', i18n.t('editorLabel'));
+      input.addEventListener('input', () => this.updateDraft(getAnnotation()?.id, input.value));
+      input.addEventListener('keydown', event => {
+        if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+          event.preventDefault();
+          this.saveEdit(getAnnotation());
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          this.cancelEdit(getAnnotation()?.id);
+        }
+      });
+      const actions = element(this.doc, 'div', 'mn-editor-actions');
+      const hint = element(this.doc, 'span', 'mn-editor-hint',
+        i18n.t('editorHint', { key: root.Zotero.isMac ? '⌘' : 'Ctrl+' }));
+      const cancel = button(this.doc, 'mn-cancel', i18n.t('cancel'));
+      cancel.addEventListener('click', () => this.cancelEdit(getAnnotation()?.id));
+      const save = button(this.doc, 'mn-save', i18n.t('save'));
+      save.addEventListener('click', () => this.saveEdit(getAnnotation()));
+      actions.append(hint, cancel, save);
+      editor.append(input, actions);
+      return { editor, input, save, cancel };
+    }
+
+    focusEditor(edit, editor, input) {
+      if (!edit?.focus) return;
+      this.win.requestAnimationFrame(() => {
+        if (!editor.hidden && input.isConnected) {
+          input.focus();
+          input.select();
+          edit.focus = false;
+        }
+      });
+    }
+
     makeCard(annotation, pageIndex) {
       const key = `${pageIndex}:${annotation.id}`;
       let card = this.cards.get(key);
@@ -237,36 +226,17 @@
         card = element(this.doc, 'article', 'mn-card');
         card.dataset.annotationId = annotation.id;
         card.dataset.pageIndex = pageIndex;
-        card.open = element(this.doc, 'button', 'mn-open');
-        card.open.type = 'button';
+        card.open = button(this.doc, 'mn-open');
         card.open.addEventListener('click', () => this.owner.navigate(card.currentAnnotation?.id));
         card.quote = element(this.doc, 'div', 'mn-quote');
         card.comment = element(this.doc, 'div', 'mn-comment');
         card.comment.tabIndex = 0;
+        card.add = button(this.doc, 'mn-add');
+        card.add.addEventListener('click', () => this.beginEdit(card.currentAnnotation));
         card.error = element(this.doc, 'div', 'mn-error');
         card.error.hidden = true;
-        card.editor = element(this.doc, 'div', 'mn-editor');
-        card.input = element(this.doc, 'textarea', 'mn-input');
-        card.input.addEventListener('input', () => this.updateDraft(card.currentAnnotation?.id, card.input.value));
-        card.input.addEventListener('keydown', event => {
-          if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-            event.preventDefault();
-            this.saveEdit(card.currentAnnotation);
-          } else if (event.key === 'Escape') {
-            event.preventDefault();
-            this.cancelEdit(card.currentAnnotation?.id);
-          }
-        });
-        const editorActions = element(this.doc, 'div', 'mn-editor-actions');
-        card.save = element(this.doc, 'button', 'mn-save');
-        card.save.type = 'button';
-        card.save.addEventListener('click', () => this.saveEdit(card.currentAnnotation));
-        card.cancel = element(this.doc, 'button', 'mn-cancel');
-        card.cancel.type = 'button';
-        card.cancel.addEventListener('click', () => this.cancelEdit(card.currentAnnotation?.id));
-        editorActions.append(card.cancel, card.save);
-        card.editor.append(card.input, editorActions);
-        card.append(card.open, card.quote, card.comment, card.error, card.editor);
+        Object.assign(card, this.makeEditor(() => card.currentAnnotation));
+        card.append(card.open, card.quote, card.comment, card.add, card.error, card.editor);
         this.bindEditGesture(card, () => card.currentAnnotation);
         // Avoid handing note interaction to the PDF's selection/annotation tools.
         for (const type of ['pointerdown', 'mousedown', 'dblclick', 'keydown']) {
@@ -278,9 +248,7 @@
       card.currentAnnotation = annotation;
       card.open.title = this.owner.i18n.t('openTitle');
       card.comment.setAttribute('aria-label', this.owner.i18n.t('commentLabel'));
-      card.input.setAttribute('aria-label', this.owner.i18n.t('editorLabel'));
-      card.save.textContent = this.owner.i18n.t('save');
-      card.cancel.textContent = this.owner.i18n.t('cancel');
+      card.add.textContent = this.owner.i18n.t('add');
       const quote = annotation.text || '';
       if (card.rawQuote !== quote) {
         card.rawQuote = quote;
@@ -295,25 +263,19 @@
 
     renderCardEditState(card, annotation) {
       const edit = this.edits.get(annotation.id);
+      const hasComment = this.hasComment(annotation);
       this.renderComment(card.comment, annotation);
       this.describeEditGesture(card.comment, annotation);
       card.editor.hidden = !edit;
-      card.comment.hidden = !!edit;
+      card.comment.hidden = !!edit || !hasComment;
+      card.add.hidden = !!edit || hasComment;
       if (edit) {
         if (card.input.value !== edit.draft) card.input.value = edit.draft;
         card.error.hidden = !edit.error;
         card.error.textContent = edit.error || '';
         card.save.disabled = edit.saving || this.owner.isReadOnly();
         card.cancel.disabled = !!edit.saving;
-        if (edit.focus) {
-          this.win.requestAnimationFrame(() => {
-            if (!card.editor.hidden && card.input.isConnected) {
-              card.input.focus();
-              card.input.select();
-              edit.focus = false;
-            }
-          });
-        }
+        this.focusEditor(edit, card.editor, card.input);
       } else {
         const error = this.errors?.get(annotation.id) || '';
         card.error.hidden = !error;
@@ -330,13 +292,16 @@
 
     renderComment(comment, annotation) {
       const source = String(annotation.comment || '');
-      if (comment.mnSource === source) return;
+      if (comment.mnSource === source && comment.mnEpoch === this.epoch) return;
       const legacyHTML = root.MarginNotesMarkdown.hasRichText(source);
+      const math = this.math && root.MarginNotesMath.available();
       comment.replaceChildren(root.MarginNotesMarkdown.render(this.doc, source, {
         legacyHTML,
         decodeText: legacyHTML ? value => decodeEntities(this.doc, value) : undefined,
+        renderMath: math ? (value, display) => root.MarginNotesMath.render(this.doc, value, display) : undefined,
       }));
       comment.mnSource = source;
+      comment.mnEpoch = this.epoch;
       if (comment.mnLinksBound) return;
       comment.mnLinksBound = true;
       const openLink = event => {
@@ -383,7 +348,8 @@
       this.clearError(annotation.id);
       this.edits.set(annotation.id, {
         original: annotation.comment || '',
-        draft: String(annotation.comment || ''),
+        // A whitespace-only comment is an empty note: start from a clean field.
+        draft: this.hasComment(annotation) ? String(annotation.comment) : '',
         error: '',
         saving: false,
         focus: true,
@@ -414,6 +380,7 @@
       if (result.ok) {
         this.edits.delete(annotation.id);
         this.clearError(annotation.id);
+        this.owner.app.refreshSoon();
       } else {
         edit.error = result.message;
       }
@@ -434,8 +401,12 @@
       const active = this.owner.enabled && this.show !== false;
       this.layer.hidden = !active;
       if (!active) { this.clearCards(); return; }
-      this.layer.dataset.theme = this.theme === 'dark' ||
-        (!this.theme && this.win.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+      const config = this.owner.app.config;
+      const dark = this.theme === 'dark' ||
+        (!this.theme && this.win.matchMedia('(prefers-color-scheme: dark)').matches);
+      this.layer.dataset.theme = dark ? 'dark' : 'light';
+      this.layer.dataset.surface = config.surface === 'dark' || (config.surface === 'auto' && dark)
+        ? 'dark' : 'paper';
       const boundsRect = rectOf(this.container);
       const bounds = { left: Math.max(0, boundsRect.left), top: Math.max(0, boundsRect.top),
         right: Math.min(this.win.innerWidth, boundsRect.left + this.container.clientWidth),
@@ -461,9 +432,9 @@
         const { index, box, pageView, div } = page;
         const annotations = [];
         for (const annotation of this.annotations || []) {
-          const hasDraft = this.edits.has(annotation.id);
           if (!COMMENT_ANNOTATION_TYPES.has(annotation.type) || annotation._hidden ||
-            (!hasDraft && (!annotation.comment || !plainText(this.doc, annotation.comment)))) continue;
+            (!this.edits.has(annotation.id) && !this.hasComment(annotation) &&
+              !this.canAddComment(annotation))) continue;
           const position = annotation.position;
           const rects = position?.pageIndex === index ? position.rects :
             position?.pageIndex + 1 === index ? position.nextPageRects : null;
@@ -487,7 +458,7 @@
           if (anchor) annotations.push({ annotation, anchor });
         }
         if (!annotations.length) continue;
-        const input = { page: box, bounds,
+        const input = { page: box, bounds, side: config.side, maxWidth: config.maxWidth || undefined,
           obstacles: pages.filter(p => p !== page).map(p => p.box).concat(occupied), notes: [] };
         const space = root.MarginNotesLayout.layoutPage(input);
         if (!Object.values(space.lanes).some(Boolean)) { noSpace += annotations.length; continue; }
@@ -519,28 +490,33 @@
           const entry = annotations.find(a => a.annotation.id === p.id);
           const edgeX = p.side === 'left' ? box.left - 2 : box.right + 2;
           const cardX = p.side === 'left' ? p.x + p.width : p.x;
-          const line = this.doc.createElementNS('http://www.w3.org/2000/svg', 'path');
           const cy = p.y + Math.min(22, p.height / 2);
           const ay = Math.max(bounds.top + 2, Math.min(bounds.bottom - 2, entry.anchor.y));
+          const stroke = color(entry.annotation.color);
+          const selected = card.classList.contains('mn-selected');
+          const line = this.doc.createElementNS(SVG, 'path');
           line.setAttribute('d', `M ${edgeX} ${ay} C ${(edgeX + cardX) / 2} ${ay}, ${(edgeX + cardX) / 2} ${cy}, ${cardX} ${cy}`);
-          line.setAttribute('stroke', color(entry.annotation.color));
-          line.setAttribute('stroke-width', '1.5');
-          line.setAttribute('fill', 'none');
-          this.lines.append(line);
+          line.setAttribute('stroke', stroke);
+          const dot = this.doc.createElementNS(SVG, 'circle');
+          dot.setAttribute('cx', edgeX);
+          dot.setAttribute('cy', ay);
+          dot.setAttribute('r', '2.25');
+          dot.setAttribute('fill', stroke);
+          if (selected) line.classList.add('mn-selected');
+          this.lines.append(line, dot);
         }
         if (result.overflow && result.hidden.length) {
-          const button = element(this.doc, 'button', 'mn-overflow',
+          const more = button(this.doc, 'mn-overflow',
             this.owner.i18n.t('overflow', {
               count: result.hidden.length,
               plural: result.hidden.length === 1 ? '' : 's',
             }));
-          button.type = 'button';
-          button.setAttribute('aria-expanded', String(this.trayPage === index));
-          setRect(button, result.overflow);
+          more.setAttribute('aria-expanded', String(this.trayPage === index));
+          setRect(more, result.overflow);
           occupied.push({ left: result.overflow.x, right: result.overflow.x + result.overflow.width,
             top: result.overflow.y, bottom: result.overflow.y + result.overflow.height });
-          button.addEventListener('click', () => { this.trayPage = index; this.schedule(); });
-          this.layer.append(button);
+          more.addEventListener('click', () => { this.trayPage = index; this.schedule(); });
+          this.layer.append(more);
           if (this.trayPage === index) {
             const lane = Object.values(result.lanes).find(l => l && Math.abs(l.x - result.overflow.x) < 1);
             if (lane) {
@@ -568,7 +544,7 @@
           start: this.doc.activeElement.selectionStart,
           end: this.doc.activeElement.selectionEnd,
         } : null;
-      const signature = JSON.stringify([spec.index, spec.lane, spec.annotations.map(a => {
+      const signature = JSON.stringify([spec.index, spec.lane, this.epoch, spec.annotations.map(a => {
         const edit = this.edits.get(a.annotation.id);
         return [a.annotation.id, a.annotation.comment, edit?.draft, edit?.error, edit?.saving];
       })]);
@@ -579,67 +555,41 @@
       const height = Math.min(420, spec.lane.bottom - spec.lane.top);
       setRect(tray, { x: spec.lane.x, y: spec.lane.bottom - height, width: spec.lane.width, height });
       const heading = element(this.doc, 'div', 'mn-tray-heading', this.owner.i18n.t('trayHeading'));
-      const close = element(this.doc, 'button', '', this.owner.i18n.t('close'));
-      close.type = 'button';
+      const close = button(this.doc, '', this.owner.i18n.t('close'));
       close.addEventListener('click', () => { this.trayPage = null; this.schedule(); });
       heading.append(close);
       const list = element(this.doc, 'div', 'mn-tray-list');
       for (const { annotation } of spec.annotations) {
         const row = element(this.doc, 'div', 'mn-tray-row');
         row.dataset.annotationId = annotation.id;
-        const button = element(this.doc, 'button', 'mn-open-tray',
+        row.style.setProperty('--mn-color', color(annotation.color));
+        const open = button(this.doc, 'mn-open-tray',
           this.owner.i18n.t('openLabel', { page: annotation.pageLabel || spec.index + 1 }));
-        button.type = 'button';
-        button.title = this.owner.i18n.t('openTitle');
-        button.addEventListener('click', () => this.owner.navigate(annotation.id));
+        open.title = this.owner.i18n.t('openTitle');
+        open.addEventListener('click', () => this.owner.navigate(annotation.id));
         const comment = element(this.doc, 'div', 'mn-comment');
         this.renderComment(comment, annotation);
         comment.tabIndex = 0;
         comment.setAttribute('aria-label', this.owner.i18n.t('commentLabel'));
         this.describeEditGesture(comment, annotation);
         const edit = this.edits.get(annotation.id);
-        comment.hidden = !!edit;
-        row.append(button, comment);
+        const hasComment = this.hasComment(annotation);
+        comment.hidden = !!edit || !hasComment;
+        const add = button(this.doc, 'mn-add', this.owner.i18n.t('add'));
+        add.hidden = !!edit || hasComment;
+        add.addEventListener('click', () => this.beginEdit(annotation));
+        row.append(open, comment, add);
         this.bindEditGesture(row, () => annotation);
         const error = element(this.doc, 'div', 'mn-error');
         error.hidden = !(edit?.error || this.errors?.get(annotation.id));
         error.textContent = edit?.error || this.errors?.get(annotation.id) || '';
-        const editor = element(this.doc, 'div', 'mn-editor');
+        const { editor, input, save } = this.makeEditor(() => annotation);
         editor.hidden = !edit;
-        const input = element(this.doc, 'textarea', 'mn-input');
-        input.setAttribute('aria-label', this.owner.i18n.t('editorLabel'));
         input.value = edit?.draft || '';
-        input.addEventListener('input', () => this.updateDraft(annotation.id, input.value));
-        input.addEventListener('keydown', event => {
-          if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-            event.preventDefault();
-            this.saveEdit(annotation);
-          } else if (event.key === 'Escape') {
-            event.preventDefault();
-            this.cancelEdit(annotation.id);
-          }
-        });
-        const editorActions = element(this.doc, 'div', 'mn-editor-actions');
-        const cancel = element(this.doc, 'button', 'mn-cancel', this.owner.i18n.t('cancel'));
-        cancel.type = 'button';
-        cancel.addEventListener('click', () => this.cancelEdit(annotation.id));
-        const save = element(this.doc, 'button', 'mn-save', this.owner.i18n.t('save'));
-        save.type = 'button';
         save.disabled = edit?.saving || this.owner.isReadOnly();
-        save.addEventListener('click', () => this.saveEdit(annotation));
-        editorActions.append(cancel, save);
-        editor.append(input, editorActions);
         row.append(error, editor);
         list.append(row);
-        if (edit?.focus) {
-          this.win.requestAnimationFrame(() => {
-            if (!editor.hidden && input.isConnected) {
-              input.focus();
-              input.select();
-              edit.focus = false;
-            }
-          });
-        }
+        this.focusEditor(edit, editor, input);
       }
       tray.append(heading, list);
       for (const type of ['pointerdown', 'mousedown', 'dblclick', 'keydown']) {
@@ -719,38 +669,56 @@
 
     mountToolbar(doc, append) {
       if (this.toolbar?.isConnected) return;
-      this.toolbar?.remove();
+      this.unmountToolbar();
       const toolbar = element(doc, 'span', 'mn-toolbar');
-      toolbar.style.cssText = 'display:inline-flex;align-items:center;gap:5px;margin-inline:5px;font-size:11px;';
-      const toggle = element(doc, 'button', 'mn-toggle', this.i18n.t('toggle'));
-      toggle.type = 'button';
-      toggle.title = this.i18n.t('toggleTitle');
+      toolbar.style.cssText = 'display:inline-flex;align-items:center;gap:4px;margin-inline:6px;font-size:11px;';
+      const toggle = button(doc, 'mn-toggle');
+      toggle.append(icon(doc, 'M3.2 2.5h5.6a.7.7 0 0 1 .7.7v9.6a.7.7 0 0 1-.7.7H3.2a.7.7 0 0 1-.7-.7V3.2a.7.7 0 0 1 .7-.7ZM11.6 5h2.4M11.6 8h2.4M11.6 11h2.4'),
+        element(doc, 'span', '', this.i18n.t('toggle')));
       toggle.addEventListener('click', () => this.app.setEnabled(!this.app.enabled));
-      const fit = element(doc, 'button', 'mn-fit', this.i18n.t('fit'));
-      fit.type = 'button';
+      const fit = button(doc, 'mn-fit');
+      fit.append(icon(doc, 'M1.8 8h3.6M5.4 8 3.8 6.4M5.4 8 3.8 9.6M14.2 8h-3.6M10.6 8l1.6-1.6M10.6 8l1.6 1.6M8 3v10'),
+        element(doc, 'span', '', this.i18n.t('fit')));
       fit.title = this.i18n.t('fitTitle');
       fit.addEventListener('click', () => {
         this.sync();
         this.app.setEnabled(true);
         for (const frame of this.frames.values()) frame.fit();
       });
-      for (const button of [toggle, fit]) {
-        button.style.cssText = 'font:inherit;color:inherit;white-space:nowrap;min-height:24px;padding:2px 7px;border:1px solid #8885;border-radius:5px;background:transparent;cursor:pointer;';
+      for (const control of [toggle, fit]) {
+        control.style.cssText = 'display:inline-flex;align-items:center;gap:5px;font:inherit;color:inherit;white-space:nowrap;min-height:26px;padding:2px 8px;border:1px solid transparent;border-radius:6px;background:transparent;cursor:pointer;';
       }
       const status = element(doc, 'span', 'mn-status');
       status.style.cssText = 'max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.7;';
       toolbar.append(toggle, fit, status);
       append(toolbar);
+      // Decorative only: the inline styles above already give usable buttons.
+      try {
+        this.toolbarStyle = element(doc, 'style', '', root.MarginNotesStyle.TOOLBAR);
+        doc.head.append(this.toolbarStyle);
+      } catch (_) { this.toolbarStyle = null; }
+      const shortcut = event => this.app.handleShortcut(event);
+      const win = doc.defaultView;
+      win?.addEventListener('keydown', shortcut, true);
+      this.releaseShortcut = () => win?.removeEventListener('keydown', shortcut, true);
       this.toolbar = toolbar;
       this.toggle = toggle;
       this.status = status;
       this.updateStatus();
     }
 
+    unmountToolbar() {
+      this.toolbar?.remove();
+      this.toolbarStyle?.remove();
+      try { this.releaseShortcut?.(); } catch (error) { this.report(error); }
+      this.toolbar = this.toolbarStyle = this.releaseShortcut = null;
+    }
+
     updateStatus() {
       if (!this.toolbar) return;
       this.toggle.setAttribute('aria-pressed', String(this.enabled));
-      this.toggle.style.background = this.enabled ? '#b9ab7430' : 'transparent';
+      this.toggle.title = this.i18n.t('toggleTitle') +
+        (this.app.config.shortcut ? ` (${root.Zotero.isMac ? '⌥M' : 'Alt+M'})` : '');
       const noSpace = [...this.frames.values()].reduce((sum, frame) => sum + (frame.noSpace || 0), 0);
       let message = '';
       if (this.enabled && this.readingModeOnly) message = this.i18n.t('readingMode');
@@ -761,40 +729,32 @@
     }
 
     sync() {
-      const inner = this.reader._internalReader;
       const live = new Set();
-      const panes = [
-        [inner?._primaryView, inner?._state?.primaryReadingModeEnabled],
-        [inner?._secondaryView, inner?._state?.secondaryReadingModeEnabled],
-      ];
-      const openPanes = panes.filter(([view]) => view);
+      const panes = Reader.panes(this.reader);
+      const openPanes = panes.filter(pane => pane.view);
       for (const view of this.suspendedDrafts.keys()) {
-        if (!openPanes.some(([pane]) => pane === view)) this.suspendedDrafts.delete(view);
+        if (!openPanes.some(pane => pane.view === view)) this.suspendedDrafts.delete(view);
       }
-      this.readingModeOnly = openPanes.length > 0 && openPanes.every(([, readingMode]) => readingMode);
-      for (const [view, readingMode] of panes) {
-        // Zotero 10 keeps the PDF iframe alive underneath Reading Mode.
-        // Suspend that pane so Fit Notes cannot zoom the hidden PDF view.
+      this.readingModeOnly = openPanes.length > 0 && openPanes.every(pane => pane.readingMode);
+      for (const { view, readingMode } of panes) {
+        // Suspend a Reading Mode pane so Fit Notes cannot zoom the hidden PDF view.
         if (readingMode) continue;
-        const raw = view?._iframeWindow;
-        const win = raw?.wrappedJSObject || raw;
-        const app = win?.PDFViewerApplication;
-        if (!win || win.closed || !app?.pdfViewer || !app.eventBus?.on ||
-          !win.document?.getElementById('viewerContainer')) continue;
+        const pdf = Reader.pdfWindow(view);
+        if (!pdf) continue;
         live.add(view);
         const existing = this.frames.get(view);
-        if (existing && existing.doc !== win.document) {
+        if (existing && existing.doc !== pdf.win.document) {
           existing.destroy(); this.frames.delete(view);
         }
         if (!this.frames.has(view)) {
-          this.frames.set(view, new FrameOverlay(this, view, win, app, this.suspendedDrafts.get(view)));
+          this.frames.set(view, new FrameOverlay(this, view, pdf.win, pdf.app, this.suspendedDrafts.get(view)));
           this.suspendedDrafts.delete(view);
         }
         this.frames.get(view).snapshot();
       }
       for (const [view, frame] of this.frames) {
         if (!live.has(view)) {
-          if (panes.some(([pane, readingMode]) => pane === view && readingMode)) {
+          if (panes.some(pane => pane.view === view && pane.readingMode)) {
             this.suspendedDrafts.set(view, frame.edits);
           }
           frame.destroy(); this.frames.delete(view);
@@ -802,7 +762,7 @@
       }
       // renderToolbar may already have fired before the extension was enabled.
       if (!this.toolbar?.isConnected) {
-        const doc = this.reader._iframeWindow?.document;
+        const doc = Reader.outerWindow(this.reader)?.document;
         const target = doc?.querySelector('.toolbar .end') || doc?.querySelector('.toolbar');
         if (target) this.mountToolbar(doc, node => target.append(node));
       }
@@ -817,35 +777,26 @@
     openAnnotationEditor(id) {
       try {
         this.navigate(id);
-        const inner = this.reader._internalReader;
-        inner?.toggleSidebar?.(true);
-        inner?.setSidebarView?.('annotations');
-        const payload = [id];
-        const ids = root.Cu.cloneInto(payload, this.reader._iframeWindow);
-        inner?.setSelectedAnnotations?.(ids);
+        Reader.openInSidebar(this.reader, id);
       } catch (error) {
         this.report(error);
       }
     }
 
     isReadOnly() {
-      const state = this.reader._internalReader?._state;
-      return !!(state?.readOnly || this.reader._internalReader?._readOnly);
+      return Reader.isReadOnly(this.reader);
     }
 
     updateComment(id, original, comment) {
-      const inner = this.reader._internalReader;
-      const state = inner?._state;
-      const annotation = (state?.annotations || []).find(item => item.id === id);
+      const annotation = Reader.annotation(this.reader, id);
       if (this.isReadOnly() || annotation?.readOnly) return { ok: false, message: this.i18n.t('readOnly') };
       if (!annotation) return { ok: false, message: this.i18n.t('missing') };
       if ((annotation.comment || '') !== (original || '')) {
         return { ok: false, message: this.i18n.t('changed') };
       }
       try {
-        const payload = [{ id, comment }];
-        const changes = root.Cu.cloneInto(payload, this.reader._iframeWindow);
-        inner._annotationManager.updateAnnotations(changes);
+        // Only the item-API fallback is asynchronous; surface its late failure.
+        Reader.updateComment(this.reader, id, comment)?.catch(error => this.report(error));
         return { ok: true };
       } catch (error) {
         this.report(error);
@@ -857,7 +808,7 @@
       for (const frame of this.frames.values()) frame.destroy();
       this.frames.clear();
       this.suspendedDrafts.clear();
-      this.toolbar?.remove();
+      this.unmountToolbar();
     }
   }
 
@@ -868,14 +819,47 @@
       if (this.running) return;
       this.running = true;
       this.i18n = root.MarginNotesI18n.create();
-      this.enabled = root.Zotero.Prefs.get(PREF, true) !== false;
+      this.settings = root.MarginNotesSettings.create();
+      this.config = this.settings.all();
+      this.enabled = this.config.enabled;
+      this.settings.observe(() => this.applySettings());
       this.onToolbar = event => {
         if (!this.running || event.reader.type !== 'pdf') return;
         this.ensure(event.reader).mountToolbar(event.doc, event.append);
       };
       root.Zotero.Reader.registerEventListener('renderToolbar', this.onToolbar, ID);
+      // Item changes arrive through the notifier and reader input through DOM
+      // events; this interval only catches what neither reports, such as a
+      // reader opening or a pane entering Reading Mode.
       this.interval = root.setInterval(() => this.sync(), 400);
+      this.notifier = root.Zotero.Notifier?.registerObserver?.(
+        { notify: () => this.refreshSoon() }, ['item'], 'margin-notes');
+      this.registerPreferences();
       this.sync();
+    },
+    // Optional: the notes work without a settings pane, so a failure here is
+    // logged for diagnosis rather than reported as a plugin error.
+    registerPreferences() {
+      const base = root.MarginNotesRoot;
+      if (!base || typeof root.Zotero.PreferencePanes?.register !== 'function') return;
+      const failed = error => root.Zotero.debug?.('Margin Notes: settings pane unavailable: ' + error);
+      const registration = {};
+      this.paneRegistration = registration;
+      try {
+        Promise.resolve(root.Zotero.PreferencePanes.register({
+          pluginID: ID,
+          src: base + 'prefs/preferences.xhtml',
+          label: this.i18n.t('toggle'),
+        })).then(id => {
+          // Registration awaits Zotero's plugin metadata. A shutdown or newer
+          // startup can finish first; release only this obsolete registration.
+          if (!this.running || this.paneRegistration !== registration) {
+            root.Zotero.PreferencePanes.unregister(id);
+            return;
+          }
+          this.pane = id;
+        }).catch(failed);
+      } catch (error) { failed(error); }
     },
     ensure(reader) {
       if (!this.controllers.has(reader)) this.controllers.set(reader, new ReaderController(reader, this));
@@ -883,7 +867,7 @@
     },
     sync() {
       if (!this.running) return;
-      const readers = root.Zotero.Reader._readers || [];
+      const readers = Reader.readers();
       for (const reader of readers) {
         if (reader.type !== 'pdf') continue;
         const controller = this.ensure(reader);
@@ -893,22 +877,55 @@
         if (!readers.includes(reader)) { controller.destroy(); this.controllers.delete(reader); }
       }
     },
-    setEnabled(enabled) {
-      this.enabled = !!enabled;
-      root.Zotero.Prefs.set(PREF, this.enabled, true);
+    // Coalesce bursts of events; the reader applies its own state change first.
+    refreshSoon() {
+      if (!this.running || this.refresh || typeof root.setTimeout !== 'function') return;
+      this.refresh = root.setTimeout(() => {
+        this.refresh = null;
+        this.sync();
+      }, 30);
+    },
+    applySettings() {
+      if (!this.running) return;
+      this.config = this.settings.all();
+      this.enabled = this.config.enabled;
       for (const controller of this.controllers.values()) {
         controller.enabled = this.enabled;
-        for (const frame of controller.frames.values()) frame.schedule();
+        for (const frame of controller.frames.values()) frame.applySettings();
         controller.updateStatus();
       }
     },
+    setEnabled(enabled) {
+      this.settings.set('enabled', !!enabled);
+      this.applySettings();
+    },
+    // Alt+M toggles the notes from the PDF or the reader toolbar. It stays out
+    // of text fields, where Option+M types a character on macOS.
+    handleShortcut(event) {
+      if (!this.running || !this.config.shortcut || event.code !== 'KeyM' || !event.altKey ||
+        event.metaKey || event.ctrlKey || event.shiftKey) return;
+      if (event.target?.closest?.('textarea, input, [contenteditable]:not([contenteditable="false"])')) return;
+      event.preventDefault();
+      event.stopPropagation();
+      this.setEnabled(!this.enabled);
+    },
     stop() {
       this.running = false;
+      this.paneRegistration = null;
       root.clearInterval(this.interval);
-      // Zotero 9.0.6's public unregisterEventListener has an inverted filter.
-      // Plugin-ID cleanup works in both Zotero 9 and 10 and is also used by
-      // Zotero's own plugin shutdown path.
-      root.Zotero.Reader._unregisterEventListenerByPluginID?.(ID);
+      if (this.refresh) root.clearTimeout?.(this.refresh);
+      this.refresh = null;
+      if (this.notifier) {
+        try { root.Zotero.Notifier.unregisterObserver(this.notifier); }
+        catch (error) { root.Zotero.logError(error); }
+        this.notifier = null;
+      }
+      this.settings?.stop();
+      if (this.pane) {
+        try { root.Zotero.PreferencePanes.unregister(this.pane); } catch (_) { /* released with the plugin */ }
+        this.pane = null;
+      }
+      Reader.removeListeners(ID);
       for (const controller of this.controllers.values()) controller.destroy();
       this.controllers.clear();
     }
