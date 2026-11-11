@@ -15,10 +15,11 @@ Margin Notes 0.5.0 adds a settings pane, formula rendering through a bundled KaT
 | Check | 0.5.0 result | Scope |
 | --- | --- | --- |
 | Node test suite | **74 / 74 passed** | 21 layout, 18 Markdown, 7 formula, 5 settings, 17 lifecycle/bridge, and 6 localization tests. |
-| Native Zotero 9.0.6 regression suite | **Not run yet** | Run `npm run test:native` against Zotero 9.0.6 before release. |
-| Native Zotero 10.0.6 regression suite | **Not run yet** | Run `npm run test:native` against Zotero 10.0.6 before release. |
+| Native Zotero 9.0.6 regression suite | **324/324 passed** | GitHub CI, macOS, official DMG with verified SHA-256. Zotero 10-only checks are skipped. |
+| Native Zotero 10.0.6 regression suite | **341/341 passed** | GitHub CI, macOS, official DMG with verified SHA-256. |
+| Native Zotero 10.0.9 regression suite | **340/340 passed** | Local isolated macOS profile. |
 
-The native suite passed **340 / 340** checks on macOS with **Zotero 10.0.9**, using an isolated profile and synthetic PDF. All 310 baseline checks remain intact; 30 additional checks cover adding a note and SQLite persistence, valid/invalid formulas, live settings, white default cards in both themes, trusted Alt+M including textarea exclusion, and native settings-pane loading/localization/lifecycle. The [public 0.5.0 evidence](evidence/compatibility-0.5.0.json) lists all 340 check results and the artifact hash, `zotero-margin-notes-0.5.0.xpi`: `b9e0806da7fb16a65c3371b268dd37b4dfd8fd2d4da717a6b70ac4daceb4075e`. Syntax checks and the local XPI build passed. A unit regression reproduced stale asynchronous pane registration after shutdown/restart; the production fix now releases obsolete registrations. No user-profile modification, user installation, commit, or publication was performed. The older-version runs above are still pending for 0.5.0; the sections below record historical results.
+The native suite passed **340 / 340** checks on macOS with **Zotero 10.0.9**, using an isolated profile and synthetic PDF. All 310 baseline checks remain intact; 30 additional checks cover adding a note and SQLite persistence, valid/invalid formulas, live settings, white default cards in both themes, trusted Alt+M including textarea exclusion, and native settings-pane loading/localization/lifecycle. The [public 0.5.0 evidence](evidence/compatibility-0.5.0.json) lists all 340 check results and the artifact hash, `zotero-margin-notes-0.5.0.xpi`: `b9e0806da7fb16a65c3371b268dd37b4dfd8fd2d4da717a6b70ac4daceb4075e`. Syntax checks and the local XPI build passed. A unit regression reproduced stale asynchronous pane registration after shutdown/restart; the production fix now releases obsolete registrations. No user-profile modification, user installation, commit, or publication was performed. The sections below record historical results.
 
 ## 0.4.2 cleanup checks
 

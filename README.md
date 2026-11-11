@@ -110,10 +110,10 @@ Margin Notes has no required third-party Zotero add-on and no npm package depend
 
 | Version | Node tests | Zotero 9.0.6 | Zotero 10.0.6 | Zotero 10.0.9 |
 | --- | --- | --- | --- | --- |
-| `0.5.0` | 74/74 passed | Not run yet | Not run yet | 340/340 passed |
+| `0.5.0` | 74/74 passed | 324/324 passed | 341/341 passed | 340/340 passed |
 | `0.4.2` | 56/56 passed | 294/294 passed | 311/311 passed | — |
 
-`0.5.0` adds settings, formulas, adding notes from the margin, and a refreshed card design. Its native regression suite passed 340/340 checks on macOS with Zotero `10.0.9` on 2026-11-11, preserving all 310 baseline checks and adding 30 checks for the new features. The `0.5.0` suite has not been rerun on `9.0.6` or `10.0.6`. Per-version results, artifact hashes, and the dependency audit are in the [compatibility record](docs/compatibility.md) and [`docs/evidence`](docs/evidence).
+`0.5.0` adds settings, formulas, adding notes from the margin, and a refreshed card design. Its native regression suite passed 340/340 checks on macOS with Zotero `10.0.9` on 2026-11-11, preserving all 310 baseline checks and adding 30 checks for the new features. GitHub CI then passed the same suite on Zotero `9.0.6` (324/324) and `10.0.6` (341/341); Zotero 10-only checks such as Reading Mode are skipped on 9.0.6. Per-version results, artifact hashes, and the dependency audit are in the [compatibility record](docs/compatibility.md) and [`docs/evidence`](docs/evidence).
 
 ## Support
 

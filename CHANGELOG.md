@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5.0 - Unreleased
+## 0.5.0 - 2026-11-11
 
 - Add a comment from the margin: selecting a highlight, underline, or note without a comment shows a card with **+ Add a note**.
 - Add a **Margin Notes** pane in Zotero's settings for text size, maximum card width, margin side, card color, quotes, connector lines, full-length comments, formulas, and the shortcut. Changes apply to open PDFs immediately.
@@ -10,7 +10,7 @@
 - Re-read the reader state on pointer and key release and on Zotero item notifications, so selection and comment changes appear without waiting for the 400 ms poll, which remains as a fallback.
 - Move every use of Zotero's unpublished reader internals into `src/reader.js`; if the internal annotation manager is missing, comments are saved through `Zotero.Items`.
 - Split styles, settings, formulas, and the reader adapter out of `src/overlay.js`, and share one editor implementation between cards and the overflow list.
-- Validate 340/340 native checks on Zotero 10.0.9 for macOS, including 30 new settings, formulas, add-note, and shortcut checks; all 310 baseline checks remain intact. Node tests pass 74/74.
+- Validate 340/340 native checks on Zotero 10.0.9 for macOS, including 30 new settings, formulas, add-note, and shortcut checks; all 310 baseline checks remain intact. Node tests pass 74/74. GitHub CI passed 324/324 on Zotero 9.0.6 and 341/341 on Zotero 10.0.6.
 - Release stale settings-pane registrations that finish after shutdown or a newer startup.
 
 ## 0.4.2 - 2026-10-28
