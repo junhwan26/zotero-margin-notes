@@ -167,6 +167,8 @@
       background:color-mix(in srgb,#e4bd5a 28%,transparent)!important;
       border-color:color-mix(in srgb,#b58d34 55%,transparent)!important; }
     .mn-toolbar button:focus-visible { outline:2px solid #538bd5; outline-offset:-1px; }
+    /* The margin card already shows and edits this comment. */
+    :root[data-mn-native-popup="hide"] .annotation-popup { display:none!important; }
   `;
 
   root.MarginNotesStyle = { LAYER, TOOLBAR };

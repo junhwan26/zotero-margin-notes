@@ -289,6 +289,55 @@ test('settings changes reach open readers and item notifications refresh them', 
   assert.equal(released, 'notifier-id');
 });
 
+test('the native comment popup hides only while a margin card shows the same annotation', () => {
+  const r = runtime();
+  const state = { primaryViewAnnotationPopup: null, secondaryViewAnnotationPopup: null };
+  const reader = { type: 'pdf', _internalReader: { _state: state } };
+  r.plugin.start();
+  const controller = r.plugin.ensure(reader);
+  const attributes = new Map();
+  controller.toggle = { setAttribute() {} };
+  controller.status = {};
+  controller.toolbar = { remove() {}, ownerDocument: { documentElement: {
+    setAttribute: (name, value) => attributes.set(name, value),
+    removeAttribute: name => attributes.delete(name),
+  } } };
+  const card = (id, extra = {}) => ({ dataset: { annotationId: id }, isConnected: true, hidden: false, ...extra });
+  controller.frames.set({}, { applySettings() {}, destroy() {}, cards: new Map([['0:A', card('A')], ['0:B', card('B', { hidden: true })]]) });
+  const popup = () => attributes.get('data-mn-native-popup');
+
+  controller.updateNativePopup();
+  assert.equal(popup(), 'hide', 'With no popup open, the next popup starts hidden');
+  state.primaryViewAnnotationPopup = { annotation: { id: 'A' } };
+  controller.updateNativePopup();
+  assert.equal(popup(), 'hide');
+  for (const id of ['B', 'image-without-card']) {
+    state.primaryViewAnnotationPopup = { annotation: { id } };
+    controller.updateNativePopup();
+    assert.equal(popup(), undefined, `${id}: an annotation without a visible card keeps Zotero's popup`);
+  }
+  state.primaryViewAnnotationPopup = { annotation: { id: 'A' } };
+  state.secondaryViewAnnotationPopup = { annotation: { id: 'image-without-card' } };
+  controller.updateNativePopup();
+  assert.equal(popup(), undefined, 'Any open popup without a card keeps the popups visible');
+  state.secondaryViewAnnotationPopup = null;
+  controller.enabled = false;
+  controller.updateNativePopup();
+  assert.equal(popup(), undefined, 'Turning margin notes off restores the popup');
+  controller.enabled = true;
+  r.prefs.set('extensions.margin-notes.hideNativePopup', false);
+  r.plugin.applySettings();
+  controller.updateNativePopup();
+  assert.equal(popup(), undefined, 'The setting can keep the popup');
+  r.prefs.set('extensions.margin-notes.hideNativePopup', true);
+  r.plugin.applySettings();
+  controller.updateNativePopup();
+  assert.equal(popup(), 'hide');
+  controller.unmountToolbar();
+  assert.equal(popup(), undefined, 'Removing the toolbar clears the attribute');
+  r.plugin.stop();
+});
+
 test('the packaged XPI and the runtime harness ship every file the bootstrap loads', () => {
   const bootstrap = fs.readFileSync(path.join(root, 'bootstrap.js'), 'utf8');
   const names = /for \(const name of \[([^\]]+)\]\)/.exec(bootstrap)[1].match(/\w+/g);

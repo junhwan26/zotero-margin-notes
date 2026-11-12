@@ -49,6 +49,13 @@
     return (state(reader)?.annotations || []).find(item => item.id === id);
   }
 
+  // IDs of the annotations whose native comment popup is open in either pane.
+  function annotationPopups(reader) {
+    const current = state(reader);
+    return [current?.primaryViewAnnotationPopup, current?.secondaryViewAnnotationPopup]
+      .map(popup => popup?.annotation?.id).filter(Boolean);
+  }
+
   function outerWindow(reader) {
     return reader?._iframeWindow;
   }
@@ -109,5 +116,5 @@
   }
 
   root.MarginNotesReader = { readers, panes, pdfWindow, snapshot, isReadOnly, annotation,
-    outerWindow, updateComment, openInSidebar, guardTextFocus, removeListeners };
+    annotationPopups, outerWindow, updateComment, openInSidebar, guardTextFocus, removeListeners };
 })(this);

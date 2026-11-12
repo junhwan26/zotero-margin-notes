@@ -22,7 +22,8 @@ function load(stored = {}, observable = true) {
 test('unset preferences keep the 0.4 appearance and placement', () => {
   const { settings } = load();
   assert.deepEqual({ ...settings.all() }, { enabled: true, fontSize: 13, maxWidth: 0, side: 'auto',
-    surface: 'paper', quote: true, connectors: true, expand: false, math: true, addOnSelect: true, shortcut: true });
+    surface: 'paper', quote: true, connectors: true, expand: false, math: true, addOnSelect: true,
+    hideNativePopup: true, shortcut: true });
 });
 
 test('hand-edited or out-of-range preferences fall back instead of reaching the layout', () => {
