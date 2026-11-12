@@ -81,6 +81,7 @@ Open Zotero's **Settings** and choose **Margin Notes**. Changes apply to open PD
 | Line from note to annotation | On | Off |
 | Long comments | Scroll inside the card | Show in full |
 | Add a note from a selected annotation | On | Off |
+| Hide Zotero's comment popup when the margin card shows the same annotation | On | Off |
 | Formulas | On | Off |
 | Alt+M shortcut | On | Off |
 

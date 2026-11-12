@@ -8,4 +8,5 @@ pref("extensions.margin-notes.connectors", true);
 pref("extensions.margin-notes.expand", false);
 pref("extensions.margin-notes.math", true);
 pref("extensions.margin-notes.addOnSelect", true);
+pref("extensions.margin-notes.hideNativePopup", true);
 pref("extensions.margin-notes.shortcut", true);

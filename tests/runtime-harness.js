@@ -101,8 +101,8 @@ async function runSmoke(timers) {
         const candidate = preferencesWindow.document;
         return candidate?.querySelector('[preference="extensions.margin-notes.fontSize"]') && candidate;
       });
-      check('the native settings pane loads all eleven production preference controls',
-        preferencesDoc.querySelectorAll('[preference^="extensions.margin-notes."]').length === 11);
+      check('the native settings pane loads all twelve production preference controls',
+        preferencesDoc.querySelectorAll('[preference^="extensions.margin-notes."]').length === 12);
       // Zotero binds preference values after the controls exist; wait for that
       // binding instead of reading the input while it is still empty.
       const fontSizeInput = preferencesDoc.querySelector('[preference="extensions.margin-notes.fontSize"]');
@@ -208,10 +208,39 @@ async function runSmoke(timers) {
       await sleep(visualHold * 1000);
     }
 
+    // These native checks type into Zotero's own comment popup, so keep it
+    // visible here; the popup-hiding default is checked separately below.
+    Zotero.Prefs.set('extensions.margin-notes.hideNativePopup', false, true);
+    plugin.applySettings();
     await native.runCore('native with margin notes enabled');
     await native.runFocusTransitions({ card, id: left.key, toggle: reader._iframeWindow.document.querySelector('.mn-toggle') });
     reader._iframeWindow.document.querySelector('.mn-fit').click();
     await waitFor('margin cards after native regression checks', () => card(left.key) && card(right.key));
+    await mark('checking Zotero comment popup beside margin cards');
+    const outerWindow = reader._iframeWindow;
+    const popupShown = () => {
+      const popup = outerWindow.document.querySelector('.annotation-popup');
+      return !!popup && outerWindow.getComputedStyle(popup).display !== 'none';
+    };
+    Zotero.Prefs.set('extensions.margin-notes.hideNativePopup', true, true);
+    plugin.applySettings();
+    const popupTarget = internal._state.annotations.find(annotation => annotation.id === left.key);
+    await native.dismissSelection();
+    await native.selectAnnotation(popupTarget, 'Zotero popup beside its margin card');
+    await waitFor('Zotero comment popup state for a carded annotation',
+      () => internal._state.primaryViewAnnotationPopup?.annotation?.id === left.key);
+    await settle();
+    check('Zotero comment popup is hidden while the margin card shows the same annotation',
+      !!outerWindow.document.querySelector('.annotation-popup') && !popupShown() && !!card(left.key),
+      { attribute: outerWindow.document.documentElement.getAttribute('data-mn-native-popup') });
+    await native.dismissSelection();
+    plugin.setEnabled(false);
+    await native.selectAnnotation(popupTarget, 'Zotero popup with margin notes off');
+    await waitFor('Zotero comment popup after turning margin notes off', popupShown);
+    check('Zotero comment popup returns when margin notes are off', true);
+    await native.dismissSelection();
+    plugin.setEnabled(true);
+    await waitFor('margin cards after Zotero popup checks', () => card(left.key) && card(right.key));
 
     await mark('editing a persisted annotation comment');
     left.annotationComment = 'EDITED: updated in the Zotero database.';

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.1 - Unreleased
+
+- Hide Zotero's own "Add comment" popup when a margin card already shows the clicked annotation, so the two no longer overlap. Annotations without a visible card (image or ink annotations, or no room in the margin) keep the popup, and turning margin notes off brings it back.
+- Add **Hide Zotero's comment popup when the margin card shows the same annotation** to the Margin Notes settings pane (on by default).
+
 ## 0.5.0 - 2026-11-11
 
 - Add a comment from the margin: selecting a highlight, underline, or note without a comment shows a card with **+ Add a note**.

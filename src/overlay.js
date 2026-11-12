@@ -708,14 +708,31 @@
     }
 
     unmountToolbar() {
+      this.toolbar?.ownerDocument?.documentElement?.removeAttribute('data-mn-native-popup');
       this.toolbar?.remove();
       this.toolbarStyle?.remove();
       try { this.releaseShortcut?.(); } catch (error) { this.report(error); }
       this.toolbar = this.toolbarStyle = this.releaseShortcut = null;
     }
 
+    // Zotero's own comment popup repeats the margin card for the same annotation.
+    // It stays hidden while every open popup has a placed card, including the
+    // moment before the next popup opens, so it never flashes over the card;
+    // annotations without a card (image, ink, no room) keep the native popup.
+    updateNativePopup() {
+      const root = this.toolbar?.ownerDocument?.documentElement;
+      if (!root) return;
+      const placed = id => [...this.frames.values()].some(frame => [...frame.cards.values()]
+        .some(card => card.dataset.annotationId === id && card.isConnected && !card.hidden));
+      const hide = this.enabled && this.app.config.hideNativePopup &&
+        Reader.annotationPopups(this.reader).every(placed);
+      if (hide) root.setAttribute('data-mn-native-popup', 'hide');
+      else root.removeAttribute('data-mn-native-popup');
+    }
+
     updateStatus() {
       if (!this.toolbar) return;
+      this.updateNativePopup();
       this.toggle.setAttribute('aria-pressed', String(this.enabled));
       this.toggle.title = this.i18n.t('toggleTitle') +
         (this.app.config.shortcut ? ` (${root.Zotero.isMac ? '⌥M' : 'Alt+M'})` : '');

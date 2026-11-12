@@ -23,6 +23,7 @@
     expand: flag(false),
     math: flag(true),
     addOnSelect: flag(true),
+    hideNativePopup: flag(true),
     shortcut: flag(true),
   };
 
